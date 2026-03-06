@@ -29,7 +29,7 @@ getwd()
 setwd("/mnt/CEPH_PROJECTS/Environtwin")
 
 # set API key 
-api_key <- "s"
+api_key <- ""
 
 
 ############################# Quick Search with Planet's data API ####################################
