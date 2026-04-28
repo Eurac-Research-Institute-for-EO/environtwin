@@ -35,10 +35,13 @@ from multiprocessing import Pool
 # ============================================================
 
 # Base directory containing Level-2 Planet scenes
-BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+#BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
+BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered"
+#UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
 
 # Directory containing whiteness rasters
-WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness"
+WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/SA"
 
 # Reference mosaics (one per year) used for shadow detection
 mosaic_refs = [
@@ -58,6 +61,7 @@ MASK_PATH = "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"
 
 # Output directory
 OUT_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/"
+#OUT_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/test/buffer"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # CSV log for failures
@@ -127,6 +131,21 @@ def log_failed_id(udm_path, error_msg):
             writer.writerow(["udm_basename", "error_message"])
         writer.writerow(row)
 
+def extract_scene_key(path):
+    base = os.path.basename(path)
+    return base.split("PLANET")[0].rstrip("_")
+
+nir_index = {}
+white_index = {}
+
+for f in glob.glob(os.path.join(BASE_DIR, "*PLANET_BOA.bsq")):
+    key = extract_scene_key(f)
+    nir_index[key] = f
+
+for f in glob.glob(os.path.join(WHITENESS_DIR, "*PLANET*white.tif")):
+    key = extract_scene_key(f)
+    white_index[key] = f
+
 
 # ============================================================
 # MAIN PROCESSING FUNCTION
@@ -167,12 +186,16 @@ def process_shadow(udm_path):
     # Locate matching NIR and whiteness files
     # --------------------------------------------------------
 
-    id_base = "_".join(basename.split("_")[:4])
-    nir_files = glob.glob(os.path.join(BASE_DIR, f"{id_base}_*_BOA.tif"))
-    white_files = glob.glob(os.path.join(WHITENESS_DIR, f"{id_base}_*_white.tif"))
+    key = extract_scene_key(basename)
 
-    nir_file = nir_files[0] if nir_files else None
-    white_file = white_files[0] if white_files else None
+    nir_file = nir_index.get(key)
+    white_file = white_index.get(key)
+
+    if nir_file is None or white_file is None:
+        print(f" ❌ Missing match for key: {key}")
+        log_failed_id(udm_path, f"Missing NIR or whiteness for key {key}")
+        return None
+
 
     try:
         # ----------------------------------------------------
@@ -222,12 +245,9 @@ def process_shadow(udm_path):
             # Shadow Detection
             # ----------------------------------------------------
 
-            if nir_file is None or white_file is None:
-                shadow_buffer = np.full(mask_shape, NODATA, dtype=np.int16)
-            else:
-                with rasterio.open(nir_file) as nir_ds, \
-                     rasterio.open(white_file) as white_ds, \
-                     rasterio.open(ref_path) as ref_ds:
+            with rasterio.open(nir_file) as nir_ds, \
+                rasterio.open(white_file) as white_ds, \
+                rasterio.open(ref_path) as ref_ds:
 
                     nir_res = np.full(mask_shape, NODATA, np.int16)
                     white_res = np.full(mask_shape, NODATA, np.int16)
@@ -242,28 +262,38 @@ def process_shadow(udm_path):
 
                     valid = (nir_res != NODATA) & (white_res != NODATA)
 
-                    shadow_mask = np.zeros(mask_shape, np.uint8)
+                    shadow_mask = np.zeros(mask_shape, np.int16)
 
                     if np.any(valid):
                         shadow_mask[valid] = (
                             (nir_res[valid] < ref_nir[valid] * DARK_FACTOR) &
                             (nir_res[valid] < NIR_THRESH) &
                             (white_res[valid] < WHITE_THRESH)
-                        ).astype(np.uint8)
+                        ).astype(np.int16)
+
+                    # add the original shadow mask to it 
+                    shadow_ori = udm_data[2]
+                    shadow_new = (
+                        (nir_res != 0) &
+                        (shadow_mask == 1) |
+                        (shadow_ori == 1) 
+                    ).astype(np.int16)
+
 
                     # Remove small objects
-                    shadow_sieved = sieve(shadow_mask, size=SIEVE_SIZE)
+                    shadow_sieved = sieve(shadow_new, size=SIEVE_SIZE)
 
                     # Dilate shadow
                     shadow_dilated = maximum_filter(
                         shadow_sieved,
                         size=KERNEL_SIZE,
                         mode='constant',
-                        cval=0
+                        cval=NODATA
                     )
 
                     shadow_buffer = np.full(mask_shape, NODATA, dtype=np.int16)
                     shadow_buffer[valid] = (shadow_dilated > 0)[valid]
+                    shadow_buffer[~valid] = NODATA
 
             # ----------------------------------------------------
             # Improved Clear Mask
@@ -333,7 +363,7 @@ if __name__ == "__main__":
 
     # Collect all UDM2 mask files
     udm_files = sorted(
-        glob.glob(os.path.join(BASE_DIR, "*_udm2_mask.tif"))
+        glob.glob(os.path.join(UDM_DIR, "*_udm2_mask.tif"))
     )
 
     print(f"🚀 Processing {len(udm_files)} UDM files")
@@ -347,3 +377,4 @@ if __name__ == "__main__":
 
     print(f"🎉 Completed {len(completed)}/{len(udm_files)} files!")
     print(f"❌ Failed {len(failed)} files (see {ERROR_LOG_PATH})")
+nir_file

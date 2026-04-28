@@ -30,13 +30,16 @@ from arosics import COREG_LOCAL
 # ============================================================
 
 # Reference image used for all co-registration
-im_reference = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/20250812_103214_91_251c_PLANET_PSB.SD_BOA.tif'
+#im_reference = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/20250812_103214_91_251c_PLANET_PSB.SD_BOA.tif'
+im_reference = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard/20250717_103607_82_253c_PLANET_PSB.SD_BOA.tif"
 
 # Folder containing target BOA images
-target_folder = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/'
+#target_folder = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/'
+target_folder = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard/'
 
 # Output directory for coregistered products
-output_folder = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/"
+#output_folder = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/"
+output_folder = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered/"
 
 os.makedirs(output_folder, exist_ok=True)
 

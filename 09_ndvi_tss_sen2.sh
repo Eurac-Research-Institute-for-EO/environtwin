@@ -1,54 +1,47 @@
 #!/bin/bash
 # ================================
-# Purpose: Build annual NDVI stacks from PLANET and SENTINEL BOA files
+# Purpose: Build annual NDVI stacks from SENTINEL files
 # and export them as ENVI BSQ files
 # ================================
 
-PLANET_ROOT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
-SEN2_ROOT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/SEN2"
-BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
+INPUT_ROOT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/SEN2"
+BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/SEN2"
 
 # ================================
-# LOOP THROUGH ALL PLANET TILES
+# LOOP THROUGH ALL data FOLDERS
 # ================================
-for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
+for SEN2_DIR in "$INPUT_ROOT"/*/data; do
 
-    [ -d "$PLANET_TILE_DIR" ] || continue
-
-    tile=$(basename "$PLANET_TILE_DIR")
-
-    INPUT_DIR="${PLANET_TILE_DIR}/data"
-    SEN2_DIR="${SEN2_ROOT}/${tile}/data"
+    # skip if not existing
+    [ -d "$SEN2_DIR" ] || continue
 
     echo "=============================================="
-    echo "📂 PLANET:   $INPUT_DIR"
-    echo "📂 SENTINEL: $SEN2_DIR"
+    echo "📂 Processing folder: $SEN2_DIR"
     echo "=============================================="
 
-    # skip if folders missing
-    [ -d "$INPUT_DIR" ] || { echo "❌ Missing PLANET data"; continue; }
-    [ -d "$SEN2_DIR" ] || { echo "❌ Missing SENTINEL data"; continue; }
+       # extract tile name (parent of "data")
+    tile=$(basename "$(dirname "$SEN2_DIR")")
+    echo "Processing tile: $tile"
 
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
     mkdir -p "$OUTPUT_DIR"
 
-    # ================================
-    # COLLECT FILES
-    # ================================
+    # Collect all NDVI files
     mapfile -t FILES_ALL < <(
-        find "$INPUT_DIR" "$SEN2_DIR" -maxdepth 1 -type f \
-        \( -name "*_PLA_masked_NDV.tif" -o -name "*_SEN2*_site.tif" \)
+        find "$SEN2_DIR" -maxdepth 1 -type f \
+        -name "*_SEN2*_site.tif"
     )
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
-        echo "❌ No NDVI files found"
+        echo "❌ No NDVI files found in $SEN2_DIR"
         continue
     fi
 
-    # ================================
-    # EXTRACT YEARS
-    # ================================
-    YEARS=$(printf "%s\n" "${FILES_ALL[@]}" \
+
+    # Extract unique years from filenames
+    YEARS=$(basename -a "${FILES_ALL[@]}" | grep -oE '^[0-9]{4}' | sort -u)
+
+ YEARS=$(printf "%s\n" "${FILES_ALL[@]}" \
         | xargs -n1 basename \
         | grep -oE '^[0-9]{4}' \
         | sort -u)
@@ -57,8 +50,8 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
         echo "------------ Processing year $year -------------"
 
         mapfile -t FILES < <(
-            find "$INPUT_DIR" "$SEN2_DIR" -maxdepth 1 -type f \
-            \( -name "${year}*_PLA_masked_NDV.tif" -o -name "${year}*_SEN2*_site.tif" \) \
+            find "$SEN2_DIR" -maxdepth 1 -type f \
+            -name "${year}*_SEN2*_site.tif" \
             | awk -F'/' '{
                 fname=$NF;
                 if (match(fname,/^[0-9]{8}/)) {
@@ -69,9 +62,6 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
             | sort -k1,1 \
             | cut -d' ' -f2-
         )
-
-        echo "Found ${#FILES[@]} files for $year"
-
 
         # Filter files: only March (03) to November (11)
         FILTERED_FILES=()
@@ -96,16 +86,16 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
         LAST_DATE=$(basename "${FILES[@]: -1}" | grep -oE '^[0-9]{8}')
         START_DOY=$(date -d "$FIRST_DATE" +%j)
         END_DOY=$(date -d "$LAST_DATE" +%j)
-        BASE_NAME="${year}${START_DOY}-${year}${END_DOY}_TSA_SENPLA_NDV_TSS"
+        BASE_NAME="${year}${START_DOY}-${year}${END_DOY}_TSA_SEN_NDV_TSS"
 
-        OUTPUT_TXT="$OUTPUT_DIR/dates_${year}_SENPLA.txt"
+        OUTPUT_TXT="$OUTPUT_DIR/dates_${year}_SEN.txt"
         > "$OUTPUT_TXT"
 
         # Build metadata list: date, DOY, and sensor type
         for f in "${FILES[@]}"; do
             fname=$(basename "$f")
             date=$(echo "$fname" | grep -oE '^[0-9]{8}')
-            sensor=$(echo "$fname" | grep -oE 'SEN2A|SEN2B|SEN2C|PLA' || echo "UNKNOWN")
+            sensor=$(echo "$fname" | grep -oE 'SEN2A|SEN2B|SEN2C' || echo "UNKNOWN")
             doy=$(date -d "$date" +%j)
             echo "${date}_${doy}_${sensor}" >> "$OUTPUT_TXT"
         done
@@ -114,7 +104,7 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
         TEMP_VRT="$OUTPUT_DIR/temp_${year}.vrt"
         gdalbuildvrt -separate "$TEMP_VRT" "${FILES[@]}"
 
-        OUTPUT_BSQ="$OUTPUT_DIR/${FIRST_DATE}-${LAST_DATE}_${START_DOY}-${END_DOY}_TSA_SENPLA_NDV_TSS.bsq"
+        OUTPUT_BSQ="$OUTPUT_DIR/${FIRST_DATE}-${LAST_DATE}_${START_DOY}-${END_DOY}_TSA_SEN_NDV_TSS.bsq"
         gdal_translate -of ENVI -ot Int16 -a_nodata -9999 "$TEMP_VRT" "$OUTPUT_BSQ"
 
         HDR_FILE="${OUTPUT_BSQ%.bsq}.hdr"

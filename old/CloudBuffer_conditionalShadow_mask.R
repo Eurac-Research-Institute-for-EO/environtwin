@@ -14,8 +14,8 @@ pattern <- paste(years, collapse="|")
 
 # list BOA files
 files_list <- list.files(
-  "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard",
-  pattern = "_BOA\\.tif$",
+  "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered",
+  pattern = "_BOA\\.bsq$",
   full.names = TRUE
 )
 
@@ -28,7 +28,7 @@ json_files_list <- list.files(
 
 # list whiteness rasters
 whiteness_list <- list.files(
-  "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness",
+  "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_white/",
   pattern = "_white\\.tif$",
   full.names = TRUE
 )
@@ -114,7 +114,7 @@ process_shadow <- function(id, sr_files, udm_files, whiteness_files,
   udm <- resample(udm, mask_raster, method = "near")
   
   # ---------------------------
-  # Cloud buffer (ALWAYS)
+  # Cloud buffer 
   # ---------------------------
   cloud <- udm[[6]]
   cloud_buffer <- focal(cloud, w = kernel, fun = max, na.rm = TRUE)

@@ -10,7 +10,7 @@ INPUT_DIRS=(
 	#"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/mosaic/01/X0008_Y0000_X0008_Y-001/mosaic"
 	#"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/mosaic/02/X0008_Y0000_X0008_Y-001/mosaic"
 	#"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/mosaic/02/X0006_Y0000_X0006_Y0001/mosaic"
-	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/mosaic/01/X0007_Y0000_X0007_Y-001/mosaic"
+	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final"
 	#"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/mosaic/02/X0007_Y0000_X0007_Y-001/mosaic"
 	)
 
@@ -30,7 +30,7 @@ for INPUT_DIR in "${INPUT_DIRS[@]}"; do
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
 
     # Collect all Planet NDVI files
-    FILES_ALL=($(find "$INPUT_DIR" -maxdepth 1 -type f -name "*_PLANET_masked_NDV.vrt"))
+    FILES_ALL=($(find "$INPUT_DIR" -maxdepth 1 -type f -name "*_PLANET_mosaic*_RGB.tif"))
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
         echo "❌ No PLANET NDVI files found in $INPUT_DIR"

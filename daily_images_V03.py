@@ -13,6 +13,7 @@ Key steps:
    - Masked BOA daily mean composite
    - Combined UDM mosaic
    - Count of valid pixels contributing to the daily mosaic
+   - write out standard deviation
 
 Logs:
 - missing_udm_pairs.log → BOAs without matching UDM
@@ -31,11 +32,13 @@ from pathlib import Path
 # =============================================================================
 
 # Input folders
-im_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/')
-udm_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard')
+#im_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/')
+#udm_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard')
+im_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered/')
+udm_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard')
 
 # Output folder for daily mosaics
-output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/MH')
+output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/SA')
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # Nodata value used in outputs
@@ -157,11 +160,12 @@ def process_daily_mosaic(date, image_pairs):
     out_boa = output_folder / f"{date}_PLANET_BOA.tif"
     out_udm = output_folder / f"{date}_PLANET_udm2_mask.tif"
     out_cnt = output_folder / f"{date}_PLANET_count.tif"
+    out_std = output_folder / f"{date}_PLANET_std.tif"
 
     # Skip if already processed
-    if all(f.exists() for f in [out_boa, out_udm, out_cnt]):
-        print(f"⏭️  Skipping {date} (already processed)")
-        return
+    #if all(f.exists() for f in [out_boa, out_udm, out_cnt]):
+    #    print(f"⏭️  Skipping {date} (already processed)")
+    #    return
 
     # Reference profiles from first image
     ref_boa, ref_udm = image_pairs[0]
@@ -175,6 +179,9 @@ def process_daily_mosaic(date, image_pairs):
         band_descriptions = ref.descriptions
         boa_profile = ref.profile.copy()
         boa_profile.update(dtype="float32", nodata=nodata_val, compress="deflate")
+
+        std_profile = boa_profile.copy()
+        std_profile.update(dtype="float32", nodata=nodata_val)
 
     # UDM raster profile
     with rasterio.open(ref_udm) as refm:
@@ -227,6 +234,12 @@ def process_daily_mosaic(date, image_pairs):
                 # Count valid pixels
                 count_full[rr, cc] = final_mask.astype(np.int16)
 
+        if not np.any(count_full):
+            print(f"⚠️ Skipping scene (no valid pixels): {boa_fp}")
+            return 
+
+        std_full = np.where(count_full[None, :, :] == 1, 0, nodata_val).astype(np.float32)
+
         # Write BOA
         with rasterio.open(out_boa, "w", **boa_profile) as dst:
             dst.write(masked_full)
@@ -250,6 +263,13 @@ def process_daily_mosaic(date, image_pairs):
             dst.write(count_full, 1)
             dst.set_band_description(1, "count")
 
+        # write std
+        with rasterio.open(out_std, "w", **std_profile) as dst:
+            dst.write(std_full[0], 1)
+            for i, desc in enumerate(band_descriptions, start=1):
+                if desc:
+                    dst.set_band_description(i, f"{desc}_std")
+
         print(f"{date}: single masked BOA + extended UDM written")
         return
 
@@ -261,6 +281,7 @@ def process_daily_mosaic(date, image_pairs):
 
     # Initialize accumulators
     sum_boa = np.zeros((bands, height, width), dtype=np.float64)
+    sumsq_boa = np.zeros((bands, height, width), dtype=np.float64) 
     cnt_boa = np.zeros((bands, height, width), dtype=np.int16)
     cnt_img = np.zeros((height, width), dtype=np.int16)
     sum_udm = np.zeros((udm_bands, height, width), dtype=np.int16)
@@ -295,10 +316,24 @@ def process_daily_mosaic(date, image_pairs):
                 # Masked BOA for accumulation
                 masked_win = np.where(final_mask[None, :, :], boa_win, 0)
                 sum_boa[:, rr, cc] += masked_win
+                sumsq_boa[:, rr, cc] += masked_win ** 2 
 
     # Compute daily mean BOA
     with np.errstate(divide='ignore', invalid='ignore'):
         daily_mean = np.where(cnt_boa > 0, sum_boa / cnt_boa, nodata_val).astype(np.int16)
+
+    # Compute standard deviation    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        mean = np.where(cnt_boa > 0, sum_boa / cnt_boa, 0)
+        mean_sq = np.where(cnt_boa > 0, sumsq_boa / cnt_boa, 0)
+
+        variance = mean_sq - mean**2
+        variance = np.maximum(variance, 0)  
+
+        daily_std = np.sqrt(variance)
+
+        daily_std = np.where(cnt_boa > 1, daily_std, 0)
+        daily_std = np.where(cnt_boa > 0, daily_std, nodata_val).astype(np.float32)
 
     # Clip UDM to 0/1
     udm_final = np.where(sum_udm > 1, 1, sum_udm).astype(np.int16)
@@ -323,6 +358,12 @@ def process_daily_mosaic(date, image_pairs):
     with rasterio.open(out_cnt, "w", **cnt_profile) as dst:
         dst.write(cnt_img, 1)
         dst.set_band_description(1, "count")
+
+    with rasterio.open(out_std, "w", **std_profile) as dst:
+        dst.write(daily_std)
+        for i, desc in enumerate(band_descriptions, start=1):
+            if desc:
+                dst.set_band_description(i, f"{desc}_std")
 
     print(f"{date}: BOA mosaic + UDM + count written")
 

@@ -5,15 +5,17 @@
 library(terra)
 
 # Define base path
-base_path <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/02/MH"
-out_path <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/02/MH/renamed"
+#base_path <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/MH"
+base_path <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/haze"
+out_path <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/haze/renamed"
 
+dir.create(out_path)
 
 # List all VRT files ending with "_TSS.vrt"
-tss_files <- list.files(base_path, pattern = "*._SENPLA_NDV_TSS\\.bsq$", full.names = TRUE)
+tss_files <- list.files(base_path, pattern = "*._PLA_HAZE_TSS\\.bsq$", full.names = TRUE)
 
 # List all date files
-date_files <- list.files(base_path, pattern = "_SENPLA\\.txt$", full.names = TRUE)
+date_files <- list.files(base_path, pattern = "_PLA\\.txt$", full.names = TRUE)
 
 # Sort both lists
 tss_files <- sort(tss_files)

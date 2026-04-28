@@ -29,7 +29,7 @@ getwd()
 setwd("/mnt/CEPH_PROJECTS/Environtwin")
 
 # set API key 
-api_key <- "PLAKf956c2c4d75841589f743e1997a5d496"
+api_key <- ""
 
 
 ############################# Quick Search with Planet's data API ####################################
@@ -54,7 +54,7 @@ cloud_cover <- 0.7            # cloud filter equal or less than 70%
 item_name <- "PSScene"        # 8 band imagery, item to use for the request
 
 # Set date range that should be covered
-date_start <- as.Date("2017-03-01")
+date_start <- as.Date("2025-11-01")
 date_end <- as.Date("2025-11-30") 
 
 ##### 3. Create your filters #####
@@ -193,7 +193,7 @@ scene_info <- data.frame(
 )
 
 # Split into batches
-batch_size <- 150
+batch_size <- 100
 asset_batches <- split(scene_info, ceiling(seq_along(scene_info$id) / batch_size))
 
 ##### 1. Write helper functions to request and activate data #####
@@ -219,9 +219,9 @@ submit_order <- function(batch, batch_num) {
     )
   })
     order_request <- list(
-    name = paste0("Site 10 - 2017 - 2025", batch_num), 
+    name = paste0("Site 10 - 2025 Composite 2", batch_num), 
     products = products,
-    tools = list(clip_tool, harmonize_tool),
+    tools = list(clip_tool, harmonize_tool, composite_tool),
     delivery = list(
       archive_type = "zip",
       archive_filename = paste0("batch_", batch_num),
@@ -263,67 +263,43 @@ for (i in seq_along(asset_batches)) {
 
 #saveRDS(order_urls, "planet_order_urls.rds")
 
-#####################################################################################
-########################## Failed orders subsetting
-# Helper function to extract only field -> details -> message
-get_failed_messages <- function(x) {
-  msgs <- character(0)
-  
-  # Only check inside field -> details
-  details_list <- x$field$Details
-  
-  # Each details entry may contain a list with $message
-  for (item in details_list) {
-    msgs <- c(msgs, as.character(item$message))
-  }
-  return(msgs)
+##### 3. Download data #####
+out_dir <- "PLANET/"
+
+if (!dir.exists(out_dir)) {
+  dir.create(out_dir)
 }
 
-# 1. extract all messages from order_urls_fail
-all_failed_messages <- unlist(lapply(order_urls_fail, get_failed_messages))
+# Create a directory for each year of data downlaod
+out_year <- file.path(paste0(out_dir,"Missing"))
 
-# 2. parse asset ids out of messages
-failed_ids <- unique(gsub("^.*no access to assets:\\s*", "", all_failed_messages, ignore.case = TRUE))
+if(!dir.exists(out_year)){
+  dir.create(out_year, recursive = T, showWarnings = F)
+}
 
-# (optional) trim whitespace
-failed_ids <- trimws(failed_ids)
+for (i in seq_along(order_urls)){
+  url_download <- order_urls[[i]]
 
-# Step 1: remove the product part "/[...]" 
-temp_ids <- gsub("/\\[.*$", "", failed_ids)
-
-# Step 2: remove the "PSScene/" prefix
-clean_failed_ids <- gsub("^PSScene/", "", temp_ids)
-
-# Find batches that contain failed numeric asset IDs
-batches_with_failures_idx <- which(
-  sapply(asset_batches, function(df) any(df$id %in% clean_failed_ids))
-)
-
-# Subset only those problematic batches
-subset_batches <- asset_batches[batches_with_failures_idx]
-
-# Remove failed rows from those batches (cleaned batch)
-cleaned_batches <- lapply(subset_batches, function(df) {
-  df[!(df$id %in% clean_failed_ids), ]
-})
-
-##### 2. Run functions to order data #####
-order_urls <- list()
-order_urls_fail <- list()
-
-for (i in seq_along(cleaned_batches)) {
-  cat("Submitting batch", i, "...\n")
-  res <- submit_order(cleaned_batches[[i]], i)
+  dest_path <- file.path(out_year, paste0("batch_0", i, ".zip"))
   
-  if (!is.null(res$`_links`$`_self`)) {
-    order_urls <- append(order_urls, list(res$`_links`$`_self`))
-    cat("Order URL:", res$`_links`$`_self`, "\n")
+  cat("Downloading URL:", url_download, "\n")
+  
+  response <- GET(url_download, authenticate(api_key, "")) 
+  
+  if (status_code(response) == 200) {
+    json_data <- content(response, as = "text", encoding = "UTF-8")
+    parsed_json <- fromJSON(json_data, flatten = TRUE)
+    
+    # Extract full download url
+    download_url <- parsed_json$`_links`$results$location
+    
+    # Download zip file into different batch folders
+    download.file(download_url[[1]], destfile = dest_path, mode = "wb")
+    
+    cat("Download complete for batch", i, "\n")
   } else {
-    cat("Failed to submit batch", i, "\n")
-    order_urls_fail <- append(order_urls_fail, list(res))
+    cat("Download failed for batch", i, "with status", status_code(response), "\n")
   }
-  
-  Sys.sleep(5)  # Delay to avoid rate limits
 }
 
 #################################################################################################
@@ -375,48 +351,75 @@ get_all_orders <- function(api_key) {
 all_orders <- get_all_orders(api_key) 
 
 ## Check which orders you need and subset the all_orders list 
-all_orders_sub <- all_orders[c(37)]      #change accordingly
+all_orders_sub <- all_orders[c(1:193)]      #change accordingly
 
 # extract the links of the orders to order urls and get back up to download the data
 order_urls <- sapply(all_orders_sub, function(order) order[["_links"]][["_self"]])
 
-
-##### 3. Download data #####
-out_dir <- "PLANET/MH"
-
-if (!dir.exists(out_dir)) {
-  dir.create(out_dir)
-}
-
-# Create a directory for each year of data downlaod
-#out_year <- file.path(paste0(out_dir,"Missing"))
-
-#if(!dir.exists(out_year)){
-#  dir.create(out_year, recursive = T, showWarnings = F)
-#}
-
-for (i in seq_along(order_urls)){
-  url_download <- order_urls[[i]]
-
-  dest_path <- file.path(out_dir, paste0("batch_0", i, ".zip"))
+#####################################################################################
+########################## Failed orders subsetting
+# Helper function to extract only field -> details -> message
+get_failed_messages <- function(x) {
+  msgs <- character(0)
   
-  cat("Downloading URL:", url_download, "\n")
-  
-  response <- GET(url_download, authenticate(api_key, "")) 
-  
-  if (status_code(response) == 200) {
-    json_data <- content(response, as = "text", encoding = "UTF-8")
-    parsed_json <- fromJSON(json_data, flatten = TRUE)
+  # Only check inside field -> details
+  if (!is.null(x$field$details)) {
+    details_list <- x$field$details
     
-    # Extract full download url
-    download_url <- parsed_json$`_links`$results$location
-    
-    # Download zip file into different batch folders
-    download.file(download_url[[1]], destfile = dest_path, mode = "wb")
-    
-    cat("Download complete for batch", i, "\n")
-  } else {
-    cat("Download failed for batch", i, "with status", status_code(response), "\n")
+    # Each details entry may contain a list with $message
+    for (item in details_list) {
+      if (!is.null(item$message)) {
+        msgs <- c(msgs, as.character(item$message))
+      }
+    }
   }
+  return(msgs)
 }
 
+# 1. extract all messages from order_urls_fail
+all_failed_messages <- unlist(lapply(order_urls_fail, get_messages))
+
+# 2. parse asset ids out of messages
+# adjust pattern if your messages have a different format
+failed_ids <- unique(gsub("^.*no access to assets:\\s*", "", all_failed_messages, ignore.case = TRUE))
+
+# (optional) trim whitespace
+failed_ids <- trimws(failed_ids)
+
+# Step 1: remove the product part "/[...]" 
+temp_ids <- gsub("/\\[.*$", "", failed_ids)
+
+# Step 2: remove the "PSScene/" prefix
+clean_failed_ids <- gsub("^PSScene/", "", temp_ids)
+
+# Find batches that contain failed numeric asset IDs
+batches_with_failures_idx <- which(
+  sapply(asset_batches, function(df) any(df$id %in% clean_failed_ids))
+)
+
+# Subset only those problematic batches
+subset_batches <- asset_batches[batches_with_failures_idx]
+
+# Remove failed rows from those batches (cleaned batch)
+cleaned_batches <- lapply(subset_batches, function(df) {
+  df[!(df$id %in% clean_failed_ids), ]
+})
+
+##### 2. Run functions to order data #####
+order_urls <- list()
+order_urls_fail <- list()
+
+for (i in seq_along(cleaned_batches)) {
+  cat("Submitting batch", i, "...\n")
+  res <- submit_order(cleaned_batches[[i]], i)
+  
+  if (!is.null(res$`_links`$`_self`)) {
+    order_urls <- append(order_urls, list(res$`_links`$`_self`))
+    cat("Order URL:", res$`_links`$`_self`, "\n")
+  } else {
+    cat("Failed to submit batch", i, "\n")
+    order_urls_fail <- append(order_urls_fail, list(res))
+  }
+  
+  Sys.sleep(5)  # Delay to avoid rate limits
+}

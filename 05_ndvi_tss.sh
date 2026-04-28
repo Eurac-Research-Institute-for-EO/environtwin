@@ -4,59 +4,78 @@
 #          and export them as ENVI BSQ files with rich headers
 # ===============================================
 
-
-INPUT_DIRS=(
-	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/MH/data"
-	)
-
+PLANET_ROOT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
 BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
 
+# ===============================================
+# LOOP THROUGH ALL PLANET TILES
+# ===============================================
+for TILE_DIR in "$PLANET_ROOT"/*; do
 
-# ===============================================
-# MAIN MULTI-FOLDER LOOP
-# ===============================================
-for INPUT_DIR in "${INPUT_DIRS[@]}"; do
+    [ -d "$TILE_DIR" ] || continue
+
+    INPUT_DIR="${TILE_DIR}/data"
+    [ -d "$INPUT_DIR" ] || continue
+
+    tile=$(basename "$TILE_DIR")
 
     echo "=============================================="
-    echo "📂 Processing PLANET NDVI in tile: $INPUT_DIR"
+    echo "📂 Processing PLANET NDVI in tile: $tile"
+    echo "📂 Folder: $INPUT_DIR"
     echo "=============================================="
-    
-    # Extract the site name from directory 
-    tile=$(basename "$(dirname "$INPUT_DIR")")
-    echo "Processing tile: $tile"
-    
+
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
+    mkdir -p "$OUTPUT_DIR"
 
-    # Collect all Planet NDVI files
-    FILES_ALL=($(find "$INPUT_DIR" -maxdepth 1 -type f -name "*_PLA_masked_NDV.tif"))
+    # ===============================================
+    # COLLECT FILES
+    # ===============================================
+    mapfile -t FILES_ALL < <(
+        find "$INPUT_DIR" -maxdepth 1 -type f \
+        -name "*_PLA_masked_NDV.tif"
+    )
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
-        echo "❌ No PLANET NDVI files found in $INPUT_DIR"
-        echo "➡️ Skipping this folder"
+        echo "❌ No PLANET NDVI files found"
+        echo "➡️ Skipping this tile"
         continue
     fi
 
-    # Extract unique years
-    YEARS=$(basename -a "${FILES_ALL[@]}" | grep -oE '^[0-9]{4}' | sort -u)
+    # ===============================================
+    # EXTRACT YEARS
+    # ===============================================
+    YEARS=$(printf "%s\n" "${FILES_ALL[@]}" \
+        | xargs -n1 basename \
+        | grep -oE '^[0-9]{4}' \
+        | sort -u)
 
     if [ -z "$YEARS" ]; then
-        echo "❌ No valid years found in filenames in $INPUT_DIR"
+        echo "❌ No valid years found in filenames"
         continue
     fi
 
-    # ===========================================
-    # PER-YEAR PROCESSING
-    # ===========================================
+    
+    # ===============================================
+    # PROCESS PER YEAR
+    # ===============================================
     for year in $YEARS; do
-        echo "------------ Processing year $year in $INPUT_DIR -------------"
+        echo "------------ Processing year $year -------------"
 
-        FILES=($(find "$INPUT_DIR" -maxdepth 1 -type f \
-            -name "${year}*_PLA_masked_NDV.tif" | sort -V))
+        mapfile -t FILES < <(
+            find "$INPUT_DIR" -maxdepth 1 -type f \
+            -name "${year}*_PLA_masked_NDV.tif" \
+            | awk -F'/' '{
+                fname=$NF;
+                if (match(fname,/^[0-9]{8}/)) {
+                    date=substr(fname,RSTART,RLENGTH);
+                    print date" "$0
+                }
+            }' \
+            | sort -k1,1 \
+            | cut -d' ' -f2-
+        )
 
-        if [ ${#FILES[@]} -eq 0 ]; then
-            echo "⚠️ No PLANET files for $year, skipping..."
-            continue
-        fi
+        echo "Found ${#FILES[@]} files for $year"
 
         first_file=$(basename "${FILES[0]}")
         last_file=$(basename "${FILES[-1]}")
