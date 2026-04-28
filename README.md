@@ -8,6 +8,6 @@ Additionally there are some old scripts and tests located in the respective fold
 ### Useful links
 PlanetScope data informnation [PlanetHub](https://docs.planet.com/data/imagery/).
 
-APIS for ordering and downloading data [API](Shttps://docs.planet.com/develop/apis/).
+APIS for ordering and downloading data [API](https://docs.planet.com/develop/apis/).
 
 Some useful examples and Jupyternotebooks [Guide](https://docs.planet.com/guides/).
