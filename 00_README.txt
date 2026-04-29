@@ -1,29 +1,36 @@
 PostProcessing of PLANETSCOPE DATA
 
-01 --> cube Planet and Sentinel data into level2_raw
+00 --> Order and Download PlanetScope data
 
-02 --> rename products and subset 8band to 4band BOA for Planet 
+01 --> cube Planet data into level2_sites_raw
 
-03 --> do some checks regarding size, readability and number of SR and UDM products
+02 --> do some checks regarding size, readability and number of SR and UDM products, move winter months
 
-04 --> delete incomplete scenes
+03 --> Geometric alignment
 
-05 --> remove the winter months files 
+04 --> improve udm mask. delete falsely classfied clear pixel & small patches
 
-06 --> rename bands of BOA and udm and TSS products
+05 --> build daily images with blue band threshold
 
-07 --> cube NDVI S2
+06 --> Calculate Color Difference for shadow mask
 
-08 --> Calculate NDVI for 01 and 02 version and create TSS for all versions 
+07 --> build shadow and cloud mask 
 
-09 --> cube lafis, gdd, frost and masks
+08 --> create daily images with new mask
 
-10 --> delete duplicated files from ndvi calculation (not needed if NDVI calculated on level2_daily)
+09 --> Calculate NDVI for Planet daily and create planet ndvi time series
 
-datacube_generation.R - generates a new data cube defintion file with certain properties that you can speficy
+10 --> cube sentinel
 
-dailyPlanetMask_ --> generate daily planet images for different versions
+11 --> do several checks 
 
+12 --> unstack Sentinel 2 time series
+
+13 --> cube the S2 NDVI to resample to 3m 
+
+14 --> Create S2 NDVI TSS and S2 + PlanetScope NDVI TSS
+
+15 --> Cube frost, gdd and lafis 
 
 
 
