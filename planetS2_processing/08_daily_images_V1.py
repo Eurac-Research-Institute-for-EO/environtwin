@@ -7,9 +7,9 @@ from multiprocessing import Pool, cpu_count
 
 # For production, uncomment these:
 input_dirs = [
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered/",
+    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/coregistered/",
 ]
-udm_folder = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard'
+udm_folder = '/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard'
 
 output_root = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/02"
 nodata_val = -9999

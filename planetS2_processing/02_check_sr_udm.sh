@@ -21,7 +21,7 @@ for DIR in "$BASE_DIR"/*; do
 
     # Count files
     count_sr=$(ls *_PLANET_*_BOA.tif 2>/dev/null | wc -l)
-    count_udm2=$(ls *_PLANET_udm2_mask.tif 2>/dev/null | wc -l)
+    count_udm2=$(ls *_PLANET_udm2_buffer.tif 2>/dev/null | wc -l)
 
     echo "  SR files:   $count_sr"
     echo "  UDM2 files: $count_udm2"
@@ -32,7 +32,7 @@ for DIR in "$BASE_DIR"/*; do
 
     # Extract prefixes
     prefixes_sr=$(ls *_PLANET_*_BOA.tif 2>/dev/null | sed 's/_PLANET_.*_BOA\.tif$//')
-    prefixes_udm2=$(ls *_PLANET_udm2_mask.tif 2>/dev/null | sed 's/_PLANET_udm2_mask.tif//')
+    prefixes_udm2=$(ls *_PLANET_udm2_buffer.tif 2>/dev/null | sed 's/_PLANET_udm2_buffer.tif//')
 
     missing_udm2=0
     missing_sr=0

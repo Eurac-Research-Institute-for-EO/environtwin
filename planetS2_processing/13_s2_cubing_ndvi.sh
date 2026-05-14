@@ -7,18 +7,17 @@ set -o pipefail
 # ===============================
 INPUT_DIRS=(
 	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0004_Y0004"
-	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0000_Y0004"
 	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0003_Y0004"
 	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0002_Y0003"
 	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0002_Y0005"
 	"/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI/X0000_Y0003"
 	)
 
-OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3/indices/SEN2/"
+OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/SEN2/"
 DOCKER_IMAGE="davidfrantz/force"
 RESOLUTION=3
 JOBS=2
-PARALLEL_JOBS=4  # Number of TIFFs to process in parallel
+PARALLEL_JOBS=4  
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -62,11 +61,11 @@ process_tiff() {
     local ERROR_LOG="${ERROR_LOG_DIR}/${BASENAME}.log"
     
     # Skip if output already exists
-       if find "$OUTPUT_DIR" -type f -name "${BASENAME}*" | grep -q .; then
-        echo "$BASENAME" >> "$SKIPPED_LOG"
-        echo "Skipping $TIFF_FILE (output already exists)"
-        return
-    fi
+    #   if find "$OUTPUT_DIR" -type f -name "${BASENAME}*" | grep -q .; then
+    #    echo "$BASENAME" >> "$SKIPPED_LOG"
+    #    echo "Skipping $TIFF_FILE (output already exists)"
+    #    return
+    #fi
 
     local MOUNT_DIR
     MOUNT_DIR=$(dirname "$TIFF_FILE")

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/missing"
+BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH"
 TARGET_DIR="$BASE_DIR/winter_months"
 
 # Create target folder if it doesn't exist
@@ -19,7 +19,7 @@ for DIR in "$BASE_DIR"/*/; do
     # Skip the target folder itself
     [[ "$DIR" == "$TARGET_DIR/" ]] && continue
     foldername=$(basename "$DIR")
-    echo "📁 Checking folder: $DIR"
+    echo "Checking folder: $DIR"
 
     # Create a corresponding subfolder inside winter_months
     DEST_SUBFOLDER="$TARGET_DIR/$foldername"

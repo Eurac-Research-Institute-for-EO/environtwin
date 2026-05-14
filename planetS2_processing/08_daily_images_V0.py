@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-PlanetScope Daily Mosaicking Pipeline
+PlanetScope Daily Composite Pipeline
 ------------------------------------
 
 This script processes PlanetScope BOA (surface reflectance) images
-together with their corresponding UDM2 masks to produce **daily mean mosaics**.
+together with their corresponding UDM2 masks to produce **daily mean Composite**.
 
 Key steps:
 1. Match each BOA to its **specific UDM** using full filename prefix.
 2. Apply the improved clear mask per image.
 3. For each date, compute:
    - Masked BOA daily mean composite
-   - Combined UDM mosaic
+   - Combined UDM Composite
    - Count of valid pixels contributing to the daily mosaic
    - write out standard deviation
 
@@ -36,7 +36,7 @@ BASE_PATH = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw')
 #BASE_PATH = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/test')
 
 # Output folder for daily mosaics
-output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03')
+output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/00')
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # Nodata value used in outputs
@@ -45,6 +45,7 @@ nodata_val = -9999
 # Log files
 log_missing_pairs = output_folder / "missing_udm_pairs.log"
 log_profile_mismatch = output_folder / "profile_mismatches.log"
+
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -105,7 +106,7 @@ def find_individual_pairs(im_folder: Path, udm_folder: Path):
             print(f"BOA: {f.name} → {prefix}")
 
     # Scan UDM files
-    for f in udm_folder.rglob("*_PLANET_udm2_buffer.tif"):
+    for f in udm_folder.rglob("*_PLANET_udm2_mask.tif"):
         prefix = extract_prefix(f)
         if prefix:
             udm_dict[prefix] = f
@@ -213,8 +214,8 @@ def process_daily_mosaic(date, image_pairs, output_folder):
                 boa_win = boa.read(window=win)
                 udm_win = udm.read(window=win)
 
-                # Use improved clear band (band 11)
-                clear = udm_win[10, :, :]
+                # Use clear band (band 1)
+                clear = udm_win[0, :, :]
 
                 # Valid BOA pixels
                 if boa.nodata is not None:
@@ -224,7 +225,7 @@ def process_daily_mosaic(date, image_pairs, output_folder):
                 final_mask = (clear == 1) & boa_valid
 
                 # Apply mask
-                masked_win = np.where(final_mask[None, :, :], boa_valid, nodata_val)
+                masked_win = np.where(final_mask[None, :, :], boa_win, nodata_val)
                 masked_full[:, rr, cc] = masked_win
 
                 # Count valid pixels
@@ -248,8 +249,7 @@ def process_daily_mosaic(date, image_pairs, output_folder):
             dst.write(udm_win)
             band_names = [
                 'clear', 'snow', 'shadow', 'light_haze', 'heavy_haze',
-                'cloud', 'confidence', 'udm2_unusable',
-                'cloud_buffer', 'shadow_buffer', 'new_clear'
+                'cloud', 'confidence', 'udm2_unusable'
             ]
             for idx, name in enumerate(band_names, start=1):
                 dst.set_band_description(idx, name)
@@ -296,15 +296,13 @@ def process_daily_mosaic(date, image_pairs, output_folder):
                 udm_win = udm.read(window=win)
 
                 # Clear mask
-                clear = udm_win[10].astype(np.int16)
+                clear = udm_win[0].astype(np.int16)
 
                 # Accumulate UDM
                 sum_udm[:, rr, cc] += udm_win.astype(np.int16)
 
                 # Valid BOA pixels
-                # Valid BOA pixels
-                if boa.nodata is not None:
-                    boa_valid = np.all(boa_win != boa.nodata, axis=0)
+                boa_valid = np.all(boa_win != (boa.nodata if boa.nodata else nodata_val), axis=0)
                 final_mask = clear & boa_valid
 
                 # Accumulate counts
@@ -312,7 +310,7 @@ def process_daily_mosaic(date, image_pairs, output_folder):
                 cnt_boa[:, rr, cc] += final_mask
 
                 # Masked BOA for accumulation
-                masked_win = np.where(final_mask[None, :, :], boa_valid, 0)
+                masked_win = np.where(final_mask[None, :, :], boa_win, 0)
                 sum_boa[:, rr, cc] += masked_win
                 sumsq_boa[:, rr, cc] += masked_win ** 2 
 
@@ -347,8 +345,7 @@ def process_daily_mosaic(date, image_pairs, output_folder):
         dst.write(udm_final)
         band_names = [
             'clear', 'snow', 'shadow', 'light_haze', 'heavy_haze',
-            'cloud', 'confidence', 'udm2_unusable',
-            'cloud_buffer', 'shadow_buffer', 'new_clear'
+            'cloud', 'confidence', 'udm2_unusable'
         ]
         for idx, name in enumerate(band_names, start=1):
             dst.set_band_description(idx, name)
@@ -394,14 +391,14 @@ def main():
         print(f"  UDM: {udm_folder}")
         print(f"{'='*80}")
         
-        # find_individual_pairs 
+        # YOUR find_individual_pairs (unchanged!)
         date_groups = find_individual_pairs(im_folder, udm_folder)
         
         if not date_groups:
             append_log(log_missing_pairs, f"No pairs in {site_path.name}")
             continue
         
-        # process_daily_mosaic loop 
+        # YOUR process_daily_mosaic loop (unchanged!)
         for date, image_pairs in date_groups.items():
             process_daily_mosaic(date, image_pairs, site_output)
         

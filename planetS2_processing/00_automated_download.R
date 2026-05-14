@@ -13,7 +13,7 @@
 #install.packages("leafpop")
 #install.packages("s2")
 
-## check if required packages are installed and download or load packes
+## check if required packages are installed and download or load packages
 packages_installation <- function(pkg) {
   if(!requireNamespace(pkg, quietly = T)) {
     install.packages(pkg, dependencies = T)
@@ -21,7 +21,7 @@ packages_installation <- function(pkg) {
   library(pkg, character.only = T)
 }
 
-packages <- c("geojsonsf", "httr", "sf","jsonlite", "mapview")
+packages <- c("geojsonsf", "httr", "sf","jsonlite")
 lapply(packages, packages_installation)
 
 # Set Workspace 
@@ -41,8 +41,10 @@ url <- "https://api.planet.com/data/v1/quick-search/"
 aois <- st_read("gis/misc/test_sites_4326.shp") 
 
 # select id 
-mapview(aois)    # click on polygon of interest and get group_id
-selected_aoi <- aois[aois$group_id == 10,]
+#mapview(aois)    # click on polygon of interest and get group_id
+selected_aoi <- aois %>% 
+  filter(group_id == 69)
+
 #mapview(selected_aoi)   
 
 # transfer polygon information into json file format
@@ -54,7 +56,7 @@ cloud_cover <- 0.7            # cloud filter equal or less than 70%
 item_name <- "PSScene"        # 8 band imagery, item to use for the request
 
 # Set date range that should be covered
-date_start <- as.Date("2025-11-01")
+date_start <- as.Date("2017-03-01")
 date_end <- as.Date("2025-11-30") 
 
 ##### 3. Create your filters #####
@@ -193,8 +195,9 @@ scene_info <- data.frame(
 )
 
 # Split into batches
-batch_size <- 100
+batch_size <- 150
 asset_batches <- split(scene_info, ceiling(seq_along(scene_info$id) / batch_size))
+asset_batches <- asset_batches[c(5, 15:16, 19:36)]
 
 ##### 1. Write helper functions to request and activate data #####
 
@@ -219,9 +222,9 @@ submit_order <- function(batch, batch_num) {
     )
   })
     order_request <- list(
-    name = paste0("Site 10 - 2025 Composite 2", batch_num), 
+    name = paste0("Site 10 - 2017:2025 ", batch_num), 
     products = products,
-    tools = list(clip_tool, harmonize_tool, composite_tool),
+    tools = list(clip_tool, harmonize_tool),
     delivery = list(
       archive_type = "zip",
       archive_filename = paste0("batch_", batch_num),
@@ -264,23 +267,16 @@ for (i in seq_along(asset_batches)) {
 #saveRDS(order_urls, "planet_order_urls.rds")
 
 ##### 3. Download data #####
-out_dir <- "PLANET/"
+out_dir <- "PLANET/10/"
 
 if (!dir.exists(out_dir)) {
   dir.create(out_dir)
 }
 
-# Create a directory for each year of data downlaod
-out_year <- file.path(paste0(out_dir,"Missing"))
-
-if(!dir.exists(out_year)){
-  dir.create(out_year, recursive = T, showWarnings = F)
-}
-
 for (i in seq_along(order_urls)){
   url_download <- order_urls[[i]]
 
-  dest_path <- file.path(out_year, paste0("batch_0", i, ".zip"))
+  dest_path <- file.path(out_dir, paste0("batch_0", i, ".zip"))
   
   cat("Downloading URL:", url_download, "\n")
   
@@ -351,7 +347,7 @@ get_all_orders <- function(api_key) {
 all_orders <- get_all_orders(api_key) 
 
 ## Check which orders you need and subset the all_orders list 
-all_orders_sub <- all_orders[c(1:193)]      #change accordingly
+all_orders_sub <- all_orders[c(4:16)]      #change accordingly
 
 # extract the links of the orders to order urls and get back up to download the data
 order_urls <- sapply(all_orders_sub, function(order) order[["_links"]][["_self"]])
@@ -361,23 +357,15 @@ order_urls <- sapply(all_orders_sub, function(order) order[["_links"]][["_self"]
 # Helper function to extract only field -> details -> message
 get_failed_messages <- function(x) {
   msgs <- character(0)
-  
-  # Only check inside field -> details
-  if (!is.null(x$field$details)) {
-    details_list <- x$field$details
-    
-    # Each details entry may contain a list with $message
-    for (item in details_list) {
-      if (!is.null(item$message)) {
-        msgs <- c(msgs, as.character(item$message))
-      }
-    }
+  details_list <- x$field$Details
+  for (item in details_list) {
+    msgs <- c(msgs, as.character(item$message))
   }
   return(msgs)
 }
 
 # 1. extract all messages from order_urls_fail
-all_failed_messages <- unlist(lapply(order_urls_fail, get_messages))
+all_failed_messages <- unlist(lapply(order_urls_fail, get_failed_messages))
 
 # 2. parse asset ids out of messages
 # adjust pattern if your messages have a different format

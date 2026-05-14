@@ -5,7 +5,7 @@ import rasterio
 from collections import defaultdict
 from multiprocessing import Pool, cpu_count
 
-# Input folders - TESTING: Using test data with 10 pairs
+
 input_dirs = [
     "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard",
 ]
@@ -24,7 +24,7 @@ input_dirs = [
 #     "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_raw/X0009_Y-001",
 # ]
 
-output_root = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/test"
+output_root = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/00"
 # For production: output_root = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_daily/00"
 nodata_val = -9999
 

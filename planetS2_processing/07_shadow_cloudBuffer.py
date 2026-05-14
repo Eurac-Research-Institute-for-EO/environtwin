@@ -35,13 +35,13 @@ from multiprocessing import Pool
 # ============================================================
 
 # Base directory containing Level-2 Planet scenes
-#BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
-BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered"
-#UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
-UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
+BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
+#BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered"
+UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+#UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
 
 # Directory containing whiteness rasters
-WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/SA"
+WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/MH"
 
 # Reference mosaics (one per year) used for shadow detection
 mosaic_refs = [
@@ -377,4 +377,3 @@ if __name__ == "__main__":
 
     print(f"🎉 Completed {len(completed)}/{len(udm_files)} files!")
     print(f"❌ Failed {len(failed)} files (see {ERROR_LOG_PATH})")
-nir_file

@@ -2,9 +2,9 @@
 set -o errexit
 set -o pipefail
 
-BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_raw"
+BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/MH"
 OUTPUT_FILE="$BASE_DIR/wrong_files_PLANET.txt"
-PARALLEL_JOBS=8   # adjust number of parallel jobs as needed
+PARALLEL_JOBS=6   
 
 > "$OUTPUT_FILE"
 
@@ -18,7 +18,7 @@ if [[ ${#files[@]} -eq 0 ]]; then
     exit 1
 fi
 
-echo "Checking all files for 4000x4000 size and 3m resolution..."
+echo "Checking all files 3m resolution..."
 echo "Files not matching expected size/resolution will be logged in $OUTPUT_FILE"
 
 # ===============================
@@ -37,8 +37,8 @@ check_file() {
     res_y=$(echo $pixel_size | cut -d',' -f2)
 
     mismatch=0
-    if (( $(echo "$width != 4000" | bc -l) )); then mismatch=1; fi
-    if (( $(echo "$height != 4000" | bc -l) )); then mismatch=1; fi
+    if (( $(echo "$width != 1332" | bc -l) )); then mismatch=1; fi
+    if (( $(echo "$height != 3062" | bc -l) )); then mismatch=1; fi
     if (( $(echo "$res_x != 3" | bc -l) )); then mismatch=1; fi
     if (( $(echo "$res_y != -3" | bc -l) )); then mismatch=1; fi
 

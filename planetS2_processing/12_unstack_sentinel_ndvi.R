@@ -2,12 +2,12 @@ library(terra)
 library(future.apply)
 library(purrr)
 
-ndvi_folders <- c("/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0000_Y0003",
-                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0002_Y0003",
-                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0002_Y0005",
-                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0003_Y0004",
-                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0004_Y0004",
-                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0000_Y0004")
+ndvi_folders <- c("/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/02/X0000_Y0003",
+                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/02/X0002_Y0003",
+                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/02/X0002_Y0005",
+                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/02/X0003_Y0004",
+                  "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/02/X0004_Y0004")
+                  #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level3/indices/environtwin/X0000_Y0004")
   
 out_root <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/S2_NDVI"
 workers <- 2
@@ -20,7 +20,7 @@ unstack_s2 <- function(ndvi_folder) {
   
   ndvi_files <- list.files(
     ndvi_folder,
-    pattern = "^2025.*_NDV_TSS.*\\.tif$",
+    pattern = "*_NDV_TSS.*\\.tif$",
     full.names = TRUE
   )
   

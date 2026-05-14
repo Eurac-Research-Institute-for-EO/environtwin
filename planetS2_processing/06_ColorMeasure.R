@@ -1,5 +1,5 @@
 #############################
-# Create Whitness layer from PLANET BOA
+# Create Color difference layer from PLANET BOA
 # Run in terminal to use more processes and run in parallel
 ############################
 library(terra)
@@ -7,9 +7,9 @@ library(tools)
 library(future.apply)
 
 # === Setup ===
-in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered/"
-udm_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
-out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/SA"
+in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/"
+udm_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/MH"
 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 

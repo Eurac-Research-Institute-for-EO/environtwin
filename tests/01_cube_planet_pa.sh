@@ -24,42 +24,29 @@ set -o pipefail
 # Configuration
 # -----------------------------------
 BASE_ROOT="/mnt/CEPH_BASEDATA/SATELLITE/PLANET/PA"
-OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW"
-TMP_DIR="$OUTPUT_DIR/planet_batches"
+OUT_ROOT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/test"
+TMP_DIR="$OUT_ROOT/planet_batches"
 PARALLEL_JOBS=4
 
-MASK_FILE="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif"
-
-# Batch range to process: set START_BATCH=1 and END_BATCH=9999 (or a suitably large number) 
-# to process all batches without filtering.
-START_BATCH=0
-END_BATCH=1
-
-# Persistent log files
-PROCESSED_LOG="$OUTPUT_DIR/processed.log"
-SKIPPED_LOG="$OUTPUT_DIR/skipped.log"
-MISSING_LOG="$OUTPUT_DIR/missing.log"
-
-# Start fresh
-: > "$PROCESSED_LOG"
-: > "$SKIPPED_LOG"
-: > "$MISSING_LOG"
-
-mkdir -p "$OUTPUT_DIR/test" "$OUTPUT_DIR/standard" "$TMP_DIR"
-
-# -----------------------------------
-# Read mask extent once (fixed grid)
-# -----------------------------------
-read xmin ymin xmax ymax <<< $(gdalinfo -json "$MASK_FILE" \
-    | jq -r '.cornerCoordinates | "\(.lowerLeft[0]) \(.lowerLeft[1]) \(.upperRight[0]) \(.upperRight[1])"')
-
-export xmin ymin xmax ymax MASK_FILE
+# Declare associative array (Bash 4+)
+declare -A MASK_FILES_PAIRS=(
+    [1]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif"
+    [2]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/FSP_mask.tif"
+    [3]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/R_mask.tif"
+    [4]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/PG1_mask.tif"
+    [5]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/SA_mask.tif"
+    [6]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/TH_mask.tif"
+    [7]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/HS_mask.tif"
+    [8]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/TG_mask.tif"
+    [9]="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/PG2_mask.tif"
+)
 
 # -----------------------------------
 # Function to process a single TIFF
 # -----------------------------------
 process_tiff() {
     local TIFF_FILE="$1"
+    local MASK_FILE="$2"
     local BASENAME=$(basename "$TIFF_FILE" .tif)
     local DIRNAME=$(dirname "$TIFF_FILE")
 
@@ -75,37 +62,6 @@ process_tiff() {
     JSON_FILE="$DIRNAME/${base}_metadata.json"
     if [[ ! -f "$JSON_FILE" ]]; then
         echo "$BASENAME" >> "$MISSING_LOG"
-        return
-    fi
-
-    # -----------------------
-    # Extract bbox from JSON safely
-    # -----------------------
-    read txmin tymin txmax tymax <<< $(jq -r '
-        if (.geometry and (.geometry.type == "Polygon" or .geometry.type == "MultiPolygon")) then
-            [ .geometry.coordinates[][][]? ] 
-            | map(select(length == 2))
-            | map(.[0]) as $xs
-            | map(.[1]) as $ys
-            | "\($xs|min) \($ys|min) \($xs|max) \($ys|max)"
-        else
-            "NA NA NA NA"
-        end
-    ' "$JSON_FILE" 2>/dev/null)
-
-    if [[ "$txmin" == "NA" || -z "$txmin" || "$txmax" == "NA" || -z "$txmax" ]]; then
-        echo "Invalid geometry: $BASENAME"
-        echo "$BASENAME" >> "$MISSING_LOG"
-        return
-    fi
-
-    # -----------------------
-    # Overlap test (fast bbox)
-    # -----------------------
-    # skip if completely outside mask
-    if (( $(echo "$txmax < $xmin || $txmin > $xmax || $tymax < $ymin || $tymin > $ymax" | bc -l) )); then
-        echo "No overlap: $BASENAME"
-        echo "$BASENAME" >> "$SKIPPED_LOG"
         return
     fi
 
@@ -133,23 +89,12 @@ process_tiff() {
     # -----------------------
     # Warp to fixed mask extent
     # -----------------------
-  gdalwarp -overwrite \
-    -t_srs EPSG:32632 \        # reproject to mask CRS
-    -te $xmin $ymin $xmax $ymax \
-    -dstnodata 0 \
-    -r bilinear \
-    "$TIFF_FILE" "$TMP_WARP"
-
-    # -----------------------
-    # Verify valid pixels to avoid NaNs
-    # -----------------------
-    MIN_VAL=$(gdalinfo -stats "$TMP_WARP" 2>/dev/null | grep STATISTICS_MINIMUM | head -1 | cut -d= -f2)
-    if [[ -z "$MIN_VAL" || "$MIN_VAL" == "nan" ]]; then
-        echo "Empty raster after warp: $BASENAME"
+   gdalwarp -overwrite -te $xmin $ymin $xmax $ymax "$TIFF_FILE" "$TMP_WARP" || {
+        echo "GDALWARP FAILED: $BASENAME"
         echo "$BASENAME" >> "$SKIPPED_LOG"
         rm -f "$TMP_WARP"
         return
-    fi
+    }
 
     # -----------------------
     # Copy metadata
@@ -198,50 +143,73 @@ export OUTPUT_DIR MASK_FILE PROCESSED_LOG SKIPPED_LOG MISSING_LOG
 # ===============================
 # MAIN LOOP: Batch ZIPs with range filter
 # ===============================
-for ZIP_FILE in "$BASE_ROOT"/batch_*.zip; do
-    if [[ ! -f "$ZIP_FILE" ]]; then
-        echo "No batch ZIP found: $ZIP_FILE"
+for ((i=1; i<=9; i++)); do
+    AOI_NUM="$i"
+    MASK_FILE="${MASK_FILES_PAIRS[$AOI_NUM]}"
+
+    # Input dir (create if needed)
+    AOI_DIR="$BASE_ROOT/$AOI_NUM"
+    
+    # Site-named output (map 1->AW, 2->FSP, etc.; customize array)
+    declare -A AOI_NAMES=(
+        [1]="AW" [2]="FSP" [3]="R" [4]="PG1" [5]="SA"
+        [6]="TH" [7]="HS" [8]="TG" [9]="PG2"
+    )
+    SITE_NAME="${AOI_NAMES[$AOI_NUM]:-$AOI_NUM}"  # Fallback to num
+    OUTPUT_DIR="$OUT_ROOT/$SITE_NAME"
+    mkdir -p "$OUTPUT_DIR/test" "$OUTPUT_DIR/standard"
+    
+    # Site-specific logs
+    PROCESSED_LOG="$OUTPUT_DIR/processed.log"
+    SKIPPED_LOG="$OUTPUT_DIR/skipped.log"
+    MISSING_LOG="$OUTPUT_DIR/missing.log"
+    : > "$PROCESSED_LOG"  # Reset per site
+    : > "$SKIPPED_LOG"
+    : > "$MISSING_LOG"
+    
+    if [[ -z "$MASK_FILE" || ! -f "$MASK_FILE" ]]; then
+        echo "Missing mask for folder $FOLDER_NUM: $MASK_FILE"
         continue
     fi
+    
+    AOI_DIR="$BASE_ROOT/$AOI_NUM"
+    [[ -d "$AOI_DIR" ]] || { echo "Dir missing: $AOI_DIR"; continue; }
+    
+    echo "Processing AOI $AOI_NUM (folder $FOLDER_NUM, mask: $(basename $MASK_FILE))"
 
-    # Extract batch number from filename, e.g., batch_98.zip -> 98
-    BASENAME=$(basename "$ZIP_FILE")
-    #BATCH_NUM=$(echo "$BASENAME" | sed -n 's/^batch_\([0-9]\+\)\.zip$/\1/p')
+      # Read extent
+    read xmin ymin xmax ymax <<< $(gdalinfo -json "$MASK_FILE" \
+    | jq -r '.cornerCoordinates | "\(.lowerLeft[0]) \(.lowerLeft[1]) \(.upperRight[0]) \(.upperRight[1])"')
+    
+    export xmin ymin xmax ymax MASK_FILE OUTPUT_DIR PROCESSED_LOG SKIPPED_LOG MISSING_LOG AOI_DIR
 
-    # Check if BATCH_NUM is numeric and within the configured range
-    #if [[ -z "$BATCH_NUM" ]]; then
-    #    echo "Warning: Cannot extract batch number from $BASENAME, skipping."
-    #    continue
-    #fi
+    for ZIP_FILE in "$AOI_DIR"/batch_*.zip; do
+        [[ -f "$ZIP_FILE" ]] || { echo "No ZIP in $AOI_DIR"; continue; }
 
-    #if (( BATCH_NUM < START_BATCH || BATCH_NUM > END_BATCH )); then
-    #    echo "Skipping batch outside range: $BASENAME"
-    #    continue
-    #fi
+        echo "Processing batch archive: $ZIP_FILE"
 
-    echo "Processing batch archive: $ZIP_FILE"
+        EXTRACT_DIR="$TMP_DIR/$(basename "$ZIP_FILE" .zip)"
+            rm -rf "$EXTRACT_DIR"
+            mkdir -p "$EXTRACT_DIR"
 
-    EXTRACT_DIR="$TMP_DIR/$(basename "$ZIP_FILE" .zip)"
-        rm -rf "$EXTRACT_DIR"
-        mkdir -p "$EXTRACT_DIR"
+            echo "Extracting $ZIP_FILE to $EXTRACT_DIR"
+            unzip -oq "$ZIP_FILE" -d "$EXTRACT_DIR"
 
-        echo "Extracting $ZIP_FILE to $EXTRACT_DIR"
-        unzip -oq "$ZIP_FILE" -d "$EXTRACT_DIR"
+            # Find all TIFFs
+            TIFF_FILES=$(find "$EXTRACT_DIR/files" -type f \( -name '*3B_AnalyticMS_SR_8b_harmonized_clip.tif' -o -name '*3B_AnalyticMS_SR_harmonized_clip.tif' \))
+            if [[ -z "$TIFF_FILES" ]]; then
+                echo "No TIFF files found in $EXTRACT_DIR"
+                continue
+            fi
 
-        # Find all TIFFs
-        TIFF_FILES=$(find "$EXTRACT_DIR/files" -type f \( -name '*3B_AnalyticMS_SR_8b_harmonized_clip.tif' -o -name '*3B_AnalyticMS_SR_harmonized_clip.tif' \))
-        if [[ -z "$TIFF_FILES" ]]; then
-            echo "No TIFF files found in $EXTRACT_DIR"
-            continue
-        fi
+            # Run processing in parallel
+            echo "$TIFF_FILES" | tr '\n' '\0' | xargs -0 -n 1 -P "$PARALLEL_JOBS" \
+        bash -c 'process_tiff "$1"' _
 
-        # Run processing in parallel
-        echo "$TIFF_FILES" | tr '\n' '\0' | xargs -0 -n 1 -P "$PARALLEL_JOBS" \
-    bash -c 'process_tiff "$1"' _
-
-        # Clean up extraction folder
-        rm -rf "$EXTRACT_DIR"
-        echo "Cleaned up extracted batch: $EXTRACT_DIR"
+            # Clean up extraction folder
+            rm -rf "$EXTRACT_DIR"
+            echo "Cleaned up extracted batch: $EXTRACT_DIR"
+    done
 done
 
 # -----------------------------------

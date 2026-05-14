@@ -133,9 +133,8 @@ process_folder_parallel_fast <- function(in_dir, out_dir,
 # ------------------------------------------------------------
 # 3️⃣  Example run
 # ------------------------------------------------------------
-#in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_raw/X0004_Y0002"
-in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
-out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
+in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
 
 min_patch_size <- 10000
 workers <- 2

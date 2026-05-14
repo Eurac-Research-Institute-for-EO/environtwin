@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Root directory containing multiple subfolders with rasters
-RASTER_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/test_PA"
+RASTER_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw"
 
 # Raster pattern
-PATTERN="*_PLANET_BOA.tif"
+PATTERN="*_PLANET_*_BOA.tif"
 
 # Log file location
 LOG_FILE="$RASTER_DIR/band_name_check.log"

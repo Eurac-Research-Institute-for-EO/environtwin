@@ -6,14 +6,15 @@ set -o pipefail
 # CONFIGURATION
 # ===============================
 INPUT_DIRS=(
-    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0003_Y0004"
-    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0000_Y0004"
-    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0000_Y0003"
-    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0002_Y0005"
-    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0004_Y0004"
-    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0002_Y0003"
+    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0003_Y0004"
+    #"/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0000_Y0004"
+    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0000_Y0003"
+    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0002_Y0005"
+    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0004_Y0004"
+    "/mnt/CEPH_PROJECTS/SAO/SENTINEL-2/SentinelVegetationProducts/FORCE/level2/X0002_Y0003"
 )
-OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/missing"
+
+OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/SEN2"
 DOCKER_IMAGE="davidfrantz/force"
 RESOLUTION=3
 JOBS=2

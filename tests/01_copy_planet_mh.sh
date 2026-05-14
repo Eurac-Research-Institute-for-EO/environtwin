@@ -23,14 +23,13 @@ set -o pipefail
 # -----------------------------------
 # Configuration
 # -----------------------------------
-BASE_ROOT="/mnt/CEPH_BASEDATA/SATELLITE/PLANET/PA"
-#BASE_ROOT="/mnt/CEPH_PROJECTS/Environtwin/PLANET/MalserHeide"
-OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW"
+BASE_ROOT="/mnt/CEPH_BASEDATA/SATELLITE/PLANET/Malser_Heide"
+OUTPUT_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/test"
 YEARS=("2017" "2018" "2019" "2020" "2021" "2022" "2023" "2024" "2025")                       # Years to process
 TMP_DIR="$OUTPUT_DIR/planet_batches"
 PARALLEL_JOBS=4
 
-MASK_FILE="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif"
+MASK_FILE="/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"
 
 # Persistent log files
 PROCESSED_LOG="$OUTPUT_DIR/processed.log"
@@ -72,8 +71,8 @@ process_tiff() {
 
     # Extract relevant metadata
     INST=$(jq -r '.properties.instrument // empty' "$JSON_FILE")
-QC=$(jq -r '.properties.quality_category // empty' "$JSON_FILE" | tr -d '[:space:]')
-GCP=$(jq -r '.properties.ground_control // empty' "$JSON_FILE" | tr -d '[:space:]')
+    QC=$(jq -r '.properties.quality_category // empty' "$JSON_FILE" | tr -d '[:space:]')
+    GCP=$(jq -r '.properties.ground_control // empty' "$JSON_FILE" | tr -d '[:space:]')
 
 # Debug print
 echo "DEBUG: $BASENAME QC='$QC' GCP='$GCP'"
@@ -155,18 +154,17 @@ export OUTPUT_DIR MASK_FILE PROCESSED_LOG SKIPPED_LOG MISSING_LOG
 # -----------------------------------
 # Main loop over years & ZIP batches
 # -----------------------------------
-for YEAR in "${YEARS[@]}"; do
-    YEAR_DIR="$BASE_ROOT/$YEAR"
-    [[ -d "$YEAR_DIR" ]] || { echo "Year directory does not exist: $YEAR_DIR"; continue; }
-
-    for ZIP_FILE in "$YEAR_DIR"/batch_*.zip; do
-        [[ -f "$ZIP_FILE" ]] || continue
-        echo "Processing batch: $ZIP_FILE"
+for ZIP_FILE in "$BASE_ROOT"/batch_*.zip; do
+    if [[ ! -f "$ZIP_FILE" ]]; then
+        echo "No batch ZIP found: $ZIP_FILE"
+        continue
+    fi
 
         EXTRACT_DIR="$TMP_DIR/$(basename "$ZIP_FILE" .zip)"
         rm -rf "$EXTRACT_DIR"
         mkdir -p "$EXTRACT_DIR"
 
+        echo "Extracting $ZIP_FILE to $EXTRACT_DIR"
         unzip -oq "$ZIP_FILE" -d "$EXTRACT_DIR"
 
         # Run processing in parallel
