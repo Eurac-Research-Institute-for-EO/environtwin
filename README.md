@@ -5,7 +5,10 @@ This repository contains all processing steps developed during the EnvironTwin p
 
 Additionally there are some old scripts and tests located in the respective folders that can be used and modified. 
 
-### Useful links
+## How to use
+Check out the docs folder where you can find all neccessary information about the workflow, additional PlanetScope information and how an when to execute which script.
+
+## Useful links
 PlanetScope data informnation [PlanetHub](https://docs.planet.com/data/imagery/).
 
 APIS for ordering and downloading data [API](https://docs.planet.com/develop/apis/).
