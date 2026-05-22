@@ -31,10 +31,10 @@ process_file() {
     #mask="${dir}/${base}_PLANET_udm2_mask.tif"
     output="${outdir}/${base}_PLA_masked_NDV.tif"
 
-    if [[ -f "$output" ]]; then
-        echo "$base" >> "$SKIPPED_LOG"
-        return
-    fi
+    #if [[ -f "$output" ]]; then
+    #    echo "$base" >> "$SKIPPED_LOG"
+    #    return
+    #fi
 
     
     # Compute NDVI with binary mask

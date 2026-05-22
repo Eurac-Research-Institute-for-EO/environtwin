@@ -35,26 +35,26 @@ from multiprocessing import Pool
 # ============================================================
 
 # Base directory containing Level-2 Planet scenes
-BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
-#BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/coregistered"
-UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
-#UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/SA/standard"
+#BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
+BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/coregistered"
+#UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
+UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard"
 
 # Directory containing whiteness rasters
-WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/MH"
+WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/AW"
 
 # Reference mosaics (one per year) used for shadow detection
-mosaic_refs = [
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20170701_20170715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20180616_20180630_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20190701_20190715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20200701_20200715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20210701_20210715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20220701_20220715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20230701_20230715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20240701_20240715_DATA.tif",
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20250716_20250722_DATA.tif"
-]
+#mosaic_refs = [
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20170701_20170715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20180616_20180630_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20190701_20190715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20200701_20200715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20210701_20210715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20220701_20220715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20230701_20230715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20240701_20240715_DATA.tif",
+#    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20250716_20250722_DATA.tif"
+#]
 
 # Target mask grid (defines CRS, resolution, and extent)
 MASK_PATH = "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"

@@ -30,7 +30,7 @@ pub_theme <- theme_minimal() +
 refDOY_files <- "/mnt/CEPH_PROJECTS/Environtwin/gis/reference"
 predDOY_files <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level4_sites/mowing/03_v14_v4"
 copernicusRef_files <- "/mnt/CEPH_PROJECTS/Environtwin/gis/reference/copernicus/"
-ndvi_files <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
+ndvi_files <- paste0("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/", site)
 webcam_files <- st_read("/mnt/CEPH_PROJECTS/Environtwin/gis/reference/MH/webcam/webcam_mowing.shp") 
 
 # resiudals
@@ -49,12 +49,11 @@ for(i in years) {
   predDOY <- app(predDOY, fun = function(x) { ifelse(x <= 0, NA, x) })
   
   # Load NDVI files for this year and site
-  ndvi_file <- list.files(paste0(ndvi_files, "/", site), 
-                           pattern = paste0("^", i, ".*_TSA_", sensor, "_NDV_TSS\\.bsq$"), 
+  ndvi_file <- list.files(ndvi_files, pattern = paste0("^", i, ".*_TSA_", sensor, "_NDV_TSS\\.bsq$"), 
                            full.names = TRUE)
   ndvi <- rast(ndvi_file)
   
-  dates_files <- list.files(paste0(ndvi_files, "/", site), 
+  dates_files <- list.files(ndvi_files, 
                       pattern = paste0("dates_", i, "_" ,sensor, "\\.txt$"), 
                       full.names = TRUE)
   
@@ -67,15 +66,17 @@ for(i in years) {
     sub(".*_(\\d+)_PLA", "\\1", date_str)
   )
   
+  names(ndvi) <- doy
+  
   # load the points for validation
   shp_file <- list.files(shp_files, pattern = paste0("point_error_", i, "\\.shp$"), full.names = TRUE)
   shp <- st_read(shp_file)
   
   # Extract time series and other validation data for specific points
-  ts_outliers <- terra::extract(ndvi, webcam_files)
+  ts_outliers <- terra::extract(ndvi, shp)
   #names(ts_outliers) <- doy
   
-  pred_vals <- terra::extract(predDOY, webcam_files)
+  pred_vals <- terra::extract(predDOY, shp)
   pred_vals_test <- pred_vals$lyr.1
   
   if (i %in% c(2024, 2025)) {
@@ -108,12 +109,12 @@ for(i in years) {
     refCop_num        <- as.numeric(refCop_resampled)
     refCop_clean      <- ifel(refCop_num < 1 | refCop_num > 365, NA, refCop_num)
     
-    copernicus_vals <- terra::extract(refCop_clean, webcam_files)
+    copernicus_vals <- terra::extract(refCop_clean, shp)
     copernicus_vals_test <- copernicus_vals$class_name
   }
   
   # --- 6. Plot NDVI time series for each sampled outlier pixel 
-  for (j in 1:nrow(webcam_files)) {
+  for (j in 1:nrow(shp)) {
     
     pixel_ts <- as.numeric(ts_outliers[j, -1])
     valid    <- !is.na(pixel_ts)
@@ -183,10 +184,10 @@ for(i in years) {
 
 ########################################################################################
 ##### --- 2023 Webcam analysis --- #####
-webcam_files <- st_read("/mnt/CEPH_PROJECTS/Environtwin/gis/reference/MH/webcam/webcam_mowing.shp") 
-test <- webcam_files %>% 
-  filter(fid == 89)
-ndvi_files <- rast("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/MH/20230201-20231129_032-333_TSA_PLA_NDV_TSS.bsq")
+shp <- st_read("/mnt/CEPH_PROJECTS/Environtwin/gis/reference/MH/webcam/webcam_mowing.shp") 
+#test <- shp %>% 
+#  filter(fid == 89)
+ndvi_files <- rast("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/MH/20230302-20231128_061-332_TSA_PLA_NDV_TSS.bsq")
 predDOY_files <- rast("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level4_sites/mowing/03_v14_v4/MH/final/MH_PLA_2023_doy1.tif")
 
 dates_files <- read.table("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03/MH/dates_2023_PLA.txt")
@@ -198,15 +199,17 @@ doy <- as.numeric(
   sub(".*_(\\d+)_PLA", "\\1", date_str)
 )
 
-test$mowing_date <- as.Date(test$mowdate1, format="%Y%m%d")
-test$DOY <- as.integer(format(test$mowing_date, "%j"))
+#test$mowing_date <- as.Date(test$mowdate1, format="%Y%m%d")
+#test$DOY <- as.integer(format(test$mowing_date, "%j"))
+shp$mowing_date <- as.Date(shp$mowdate1, format="%Y%m%d")
+shp$DOY <- as.integer(format(shp$mowing_date, "%j"))
 
 # extract ndvi time series
-ndvi_ts <- terra::extract(ndvi_files, test, fun = "mean")
-predDOY <- terra::extract(predDOY_files, test, fun = "modal")
+ndvi_ts <- terra::extract(ndvi_files, shp, fun = "mean")
+predDOY <- terra::extract(predDOY_files, shp, fun = "modal")
 names(predDOY) <- c("ID", "DOY")
 
-pixel_ts <- as.numeric(ndvi_ts[,-1])
+pixel_ts <- ndvi_ts[,-1]
 valid    <- !is.na(pixel_ts)
 
 df_plot <- data.frame(
@@ -215,7 +218,7 @@ df_plot <- data.frame(
 )
 
 events <- data.frame(
-  doy    = c(test$DOY, predDOY$DOY),
+  doy    = c(shp$DOY, predDOY$DOY),
   source = c("Webcam", "Predicted")   
 )
 

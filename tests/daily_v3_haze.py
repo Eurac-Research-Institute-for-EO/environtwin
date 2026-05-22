@@ -1,24 +1,4 @@
 #!/usr/bin/env python3
-"""
-PlanetScope Daily Mosaicking Pipeline
-------------------------------------
-
-This script processes PlanetScope BOA (surface reflectance) images
-together with their corresponding UDM2 masks to produce **daily mean mosaics**.
-
-Key steps:
-1. Match each BOA to its **specific UDM** using full filename prefix.
-2. Apply the improved clear mask per image.
-3. For each date, compute:
-   - Masked BOA daily mean composite
-   - Combined UDM mosaic
-   - Count of valid pixels contributing to the daily mosaic
-   - write out standard deviation
-
-Logs:
-- missing_udm_pairs.log → BOAs without matching UDM
-- profile_mismatches.log → any image profile inconsistencies
-"""
 
 import os
 import shutil
@@ -26,6 +6,7 @@ import numpy as np
 import rasterio
 from collections import defaultdict
 from pathlib import Path
+import json
 
 # =============================================================================
 # CONFIGURATION
@@ -35,7 +16,7 @@ from pathlib import Path
 BASE_PATH = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw')
 
 # Output folder for daily mosaics
-output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03')
+output_folder = Path('/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/04')
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # Nodata value used in outputs
@@ -44,6 +25,8 @@ nodata_val = -9999
 # Log files
 log_missing_pairs = output_folder / "missing_udm_pairs.log"
 log_profile_mismatch = output_folder / "profile_mismatches.log"
+
+HAZE_THRESHOLD = 20.0 
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -67,18 +50,20 @@ def append_log(log_file, msg):
 
 
 def extract_prefix(filepath):
-    """
-    Extract unique scene prefix from PlanetScope filenames.
-    
-    Example:
-        20211130_091749_81_2423_PLANET_BOA.bsq → 20211130_091749_81_2423
-    """
     filename = os.path.basename(filepath)
-    stem = os.path.splitext(filename)[0]  # remove extension
-    if "_PLANET" not in stem:
-        return None
-    return stem.split("_PLANET")[0]
+    stem = os.path.splitext(filename)[0]  # remove .json, .bsq, .tif
 
+    # If it has _PLANET -> cut there
+    if "_PLANET" in stem:
+        return stem.split("_PLANET")[0]
+
+    # If it's a metadata JSON like 20230821_..._metadata.json
+    if stem.endswith("_metadata"):
+        # strip _metadata -> 20230821_..._metadata -> 20230821_...
+        return stem[:-len("_metadata")]
+
+    # If you ever have other JSON patterns, adjust here
+    return None
 
 # =============================================================================
 # 1. MATCH BOA & UDM FILES BY FULL PREFIX
@@ -86,47 +71,87 @@ def extract_prefix(filepath):
 
 def find_individual_pairs(im_folder: Path, udm_folder: Path):
     """
-    Scan BOA and UDM folders and match files using extract_prefix().
-    
-    Returns:
-        date_groups: dict {YYYYMMDD: [(boa_fp, udm_fp), ...]}
+    Original BOA–UDM matching, plus haze filter from PlanetScope JSON.
+    Returns: date_groups: {YYYYMMDD: [(boa_fp, udm_fp), ...]}
     """
-    print("Matching BOA-UDM pairs by common prefix...")
+    print("Matching BOA-UDM pairs by common prefix (haze filtering on)...")
+    print(f" HAZE_THRESHOLD = {HAZE_THRESHOLD}%")
 
-    boa_dict = {}  # {prefix: boa_filepath}
-    udm_dict = {}  # {prefix: udm_filepath}
+    boa_dict = {}
+    udm_dict = {}
+    json_dict = {}
 
-    # Scan BOA files
+    # BOA files
     for f in im_folder.rglob("*_PLANET_BOA.bsq"):
         prefix = extract_prefix(f)
         if prefix:
             boa_dict[prefix] = f
             print(f"BOA: {f.name} → {prefix}")
 
-    # Scan UDM files
+    # UDM files
     for f in udm_folder.rglob("*_PLANET_udm2_buffer.tif"):
         prefix = extract_prefix(f)
         if prefix:
             udm_dict[prefix] = f
             print(f"UDM: {f.name} → {prefix}")
 
-    # Match pairs and group by date
-    pairs = []
+    # JSON files (same folder as UDM)
+    for f in udm_folder.rglob("*_metadata.json"):
+        prefix = extract_prefix(f)
+        if prefix:
+            json_dict[prefix] = f
+            print(f"JSON: {f.name} → {prefix}")
+
+    # Match + filter by haze
     date_groups = defaultdict(list)
+    n_valid = 0
+    n_skipped = 0
 
     for prefix, boa_fp in boa_dict.items():
-        if prefix in udm_dict:
-            udm_fp = udm_dict[prefix]
-            pairs.append((boa_fp, udm_fp))
-            date = prefix[:8]  # YYYYMMDD
-            date_groups[date].append((boa_fp, udm_fp))
-            print(f"✓ MATCH: {prefix}")
-        else:
+        if prefix not in udm_dict:
             print(f"NO UDM for prefix: {prefix}")
+            continue
 
-    print(f"\n {len(pairs)} PERFECT PAIRS across {len(date_groups)} dates")
+        udm_fp = udm_dict[prefix]
+
+        if prefix not in json_dict:
+            print(f"NO JSON for prefix: {prefix}")
+            continue
+
+        json_fp = json_dict[prefix]
+
+        # Read haze from JSON
+        try:
+            with open(json_fp, "r") as f:
+                data = json.load(f)
+
+            props = data.get("properties", {})
+            haze_light = float(props.get("light_haze_percent", 0) or 0)
+            haze_heavy = float(props.get("heavy_haze_percent", 0) or 0)
+            total_haze = haze_light + haze_heavy
+
+        except Exception as e:
+            print(f"JSON ERROR {json_fp.name}: {e}")
+            n_skipped += 1
+            continue
+
+        if total_haze >= HAZE_THRESHOLD:
+            n_skipped += 1
+            print(f"SKIP {prefix} | haze={total_haze:.2f}%")
+            continue
+
+        # Valid pair
+        date = prefix[:8]  # YYYYMMDD
+        date_groups[date].append((boa_fp, udm_fp))
+        n_valid += 1
+        print(f"✓ MATCH {prefix} | haze={total_haze:.2f}%")
+
+    print(
+        f"\n VALID PAIRS  : {n_valid}\n"
+        f" SKIPPED (haze): {n_skipped}\n"
+        f" DATES        : {len(date_groups)}"
+    )
     return dict(date_groups)
-
 
 # =============================================================================
 # 2. PROCESS DAILY MOSAIC FOR A SINGLE DATE

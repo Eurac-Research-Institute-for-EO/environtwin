@@ -16,55 +16,11 @@ library(tidyr)
 # Standard Folder containing JSON files
 folder_path_std <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
 
-# List all JSON files
+# List all JSON file
 #json_files_test <- list.files(folder_path, pattern = "\\.json$", full.names = TRUE)
 json_files_std <- list.files(folder_path_std, pattern = "\\.json$", full.names = TRUE)
 
-# Initialize empty list to store data
-all_data <- list()
-
-# Function to load json files and get informations
-process_info <- function(json_path) {
-  print(json_path)
-  
-  # Load JSON file
-  data <- fromJSON(json_path)
-  
-  # Extract fields
-  image_id <- data$id
-  acquisition_date <- data$properties$acquired
-  publishing_status <- data$properties$publishing_stage
-  quality_status <- data$properties$quality_category
-  gc_present <- data$properties$ground_control
-  haze_light <- data$properties$light_haze_percent
-  haze_heavy <- data$properties$heavy_haze_percent
-  
-  year <- substr(acquisition_date, 1, 4)
-  
-  all_data[[length(all_data) + 1]] <- data.frame(
-    path = json_path,
-    id = image_id,
-    year = year,
-    publishing_stage = publishing_status,
-    quality_status = quality_status,
-    gc_present = gc_present,
-    haze_light = haze_light,
-    haze_heavy = haze_heavy,
-    stringsAsFactors = FALSE
-  )
-}
-
-# apply function to all json files in list 
-#json_test <- lapply(json_files_test, process_info)
-json_std <- lapply(json_files_std, process_info)
-
-# create on df with all information and save as csv
-df_info <- bind_rows(json_std)
-
-write.csv(json_std, "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/Planet_haze_info.csv", row.names = FALSE)
-
 ################################################################################
-
 #### ---- Create statistics for data ---- #####
 
 # Initialize empty list to store data
@@ -80,9 +36,9 @@ process_stats <- function(json_path){
   # Extract fields
   image_id <- data$id
   acquisition_date <- data$properties$acquired
-  publishing_status <- data$properties$publishing_stage
+  #publishing_status <- data$properties$publishing_stage
   cloud_cover <- data$properties$cloud_cover * 100
-  gc_present <- data$properties$ground_control
+  #gc_present <- data$properties$ground_control
   #quality_status <- data$properties$quality_category
   haze_light <- data$properties$light_haze_percent
   haze_heavy <- data$properties$heavy_haze_percent
@@ -92,9 +48,9 @@ process_stats <- function(json_path){
   all_data[[length(all_data) + 1]] <- data.frame(
     id = image_id,
     year = year,
-    publishing_stage = publishing_status,
+    #publishing_stage = publishing_status,
     cloud_cover = cloud_cover,
-    gc_present = gc_present,
+    #gc_present = gc_present,
     #quality_status = quality_status,
     haze_light = haze_light,
     haze_heavy = haze_heavy,
@@ -109,6 +65,8 @@ json_std <- lapply(json_files_std, process_stats)
 # Combine all into a single data frame
 df_stats <- bind_rows(json_std)
 
+write.csv(json_std, "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/Planet_haze_info.csv", row.names = FALSE)
+
 # -------------------------------------------------
 # 1) YEARLY STATISTICS 
 # -------------------------------------------------
@@ -116,14 +74,15 @@ stats <- df_stats %>%
   group_by(year) %>%
   summarise(
     total_images = n(),
-    no_ground_control_points = sum(gc_present == FALSE),
-    high_haze = sum(haze_light > 45 | haze_heavy > 45),
+    #no_ground_control_points = sum(gc_present == FALSE),
+    #high_haze = sum(haze_light > 45 | haze_heavy > 45),
+    high_cloud = sum(cloud_cover > 50),
     .groups = "drop"
   ) %>%
   arrange(year)
 
 print(stats)
-write.csv(stats, "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/yearly_statistics_haze.csv", row.names = FALSE)
+write.csv(stats, "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/yearly_statistics_clouds.csv", row.names = FALSE)
 
 # -------------------------------------------------
 # 2) IDS PER YEAR — NO GROUND CONTROL
@@ -193,3 +152,4 @@ stats_finalized_long <- stats %>%
     names_to = "qc_type",
     values_to = "count"
   )
+

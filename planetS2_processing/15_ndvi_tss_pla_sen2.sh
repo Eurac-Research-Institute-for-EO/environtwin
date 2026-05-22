@@ -21,13 +21,13 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
     SEN2_DIR="${SEN2_ROOT}/${tile}/data"
 
     echo "=============================================="
-    echo "📂 PLANET:   $INPUT_DIR"
-    echo "📂 SENTINEL: $SEN2_DIR"
+    echo "PLANET:   $INPUT_DIR"
+    echo "SENTINEL: $SEN2_DIR"
     echo "=============================================="
 
     # skip if folders missing
-    [ -d "$INPUT_DIR" ] || { echo "❌ Missing PLANET data"; continue; }
-    [ -d "$SEN2_DIR" ] || { echo "❌ Missing SENTINEL data"; continue; }
+    [ -d "$INPUT_DIR" ] || { echo "Missing PLANET data"; continue; }
+    [ -d "$SEN2_DIR" ] || { echo "Missing SENTINEL data"; continue; }
 
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
     mkdir -p "$OUTPUT_DIR"
@@ -87,7 +87,7 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
 
         # Skip if no files left
         if [ ${#FILES[@]} -eq 0 ]; then
-            echo "⚠️ No files for $year in months 03–11, skipping..."
+            echo "No files for $year in months 03–11, skipping..."
             continue
         fi
 
@@ -139,7 +139,7 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
 
         # --- Overwrite or append the "band names" and "wavelength" sections in the header ---
         if [ -f "$HDR_FILE" ]; then
-            echo "🧩 Updating band names and wavelengths in header: $HDR_FILE"
+            echo "Updating band names and wavelengths in header: $HDR_FILE"
 
             BAND_BLOCK="band names = {\n"
             count=0
@@ -184,12 +184,12 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
             } >> "${HDR_FILE}.tmp"
 
             mv "${HDR_FILE}.tmp" "$HDR_FILE"
-            echo "✅ Updated header: $HDR_FILE"
+            echo "Updated header: $HDR_FILE"
         else
-            echo "⚠️ Header file not found for $OUTPUT_BSQ — skipping header update."
+            echo "Header file not found for $OUTPUT_BSQ — skipping header update."
         fi
 
-        echo "✅ Year $year stack created:"
+        echo "Year $year stack created:"
         echo "  BSQ: $OUTPUT_BSQ"
         rm -f "$TEMP_VRT"
     done

@@ -8,11 +8,11 @@ import shutil
 
 
 # --- Configuration ---
-BASE_ROOT = Path("/mnt/CEPH_PROJECTS/Environtwin/PLANET")
+BASE_ROOT = Path("/mnt/CEPH_PROJECTS/Environtwin/PLANET")  # change to path in CEPH_BASEDATA
 OUT_ROOT = Path("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw")
 
 AOI_TO_MASK = {
-    #1: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif",
+    1#: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif",
     #2: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/FSP_mask.tif",
     #3: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/R_mask.tif",
     #4: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/PG1_mask.tif",
@@ -21,7 +21,7 @@ AOI_TO_MASK = {
     #7: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/HS_mask.tif",
     #8: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/TG_mask.tif",
     #9: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/PG2_mask.tif",
-    10: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"
+    #10: "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"
 }
 
 AOI_TO_SITE = {

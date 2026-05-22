@@ -50,8 +50,8 @@ get_all_orders <- function(api_key) {
 }
 
 process_single_aoi <- function(group_id, api_key, cloud_cover = 0.7,
-                               date_start = as.Date("2017-03-01"),
-                               date_end = as.Date("2025-11-30"),
+                               date_start = as.Date("2026-05-18"),
+                               date_end = as.Date("2026-11-30"),
                                batch_size = 100,
                                max_retries_outer = 12,    # outer attempts
                                retry_delay = 300L,        # 5 min
@@ -127,7 +127,7 @@ process_single_aoi <- function(group_id, api_key, cloud_cover = 0.7,
       list(item_ids = list(scene_id), item_type = "PSScene", product_bundle = bundle)
     })
     order_request <- list(
-      name = paste0("BMS ", group_id, "- 2017:2025 ", batch_num),
+      name = paste0("PA ", group_id, "- 2026 ", batch_num),
       products = products,
       tools = list(clip_tool, harmonize_tool),
       delivery = list(archive_type = "zip", archive_filename = paste0("batch_", batch_num), single_archive = TRUE),
@@ -217,7 +217,7 @@ process_single_aoi <- function(group_id, api_key, cloud_cover = 0.7,
   
   while (attempt <= max_retries_outer) {
     cat(sprintf("Order status outer attempt %d/%d\n", attempt, max_retries_outer))
-    order_status <- get_order_status(order_urls, api_key, group_id, max_wait_hours = max_wait_hours_internal, polling_interval = min(20, polling_interval))
+    order_status <- get_order_status(order_urls, api_key, group_id, max_wait_hours = max_wait_hours_internal, polling_interval = min(180, polling_interval))
     if (identical(order_status, TRUE)) { cat("All orders ready, proceeding to downloads.\n"); break }
     cat("get_order_status returned:", as.character(order_status), "\n")
     if (attempt < max_retries_outer) { cat("Will retry after", retry_delay, "seconds...\n"); Sys.sleep(retry_delay); attempt <- attempt + 1 } else { cat("Max outer retries reached; aborting downloads.\n"); break }
@@ -225,7 +225,7 @@ process_single_aoi <- function(group_id, api_key, cloud_cover = 0.7,
   
   ##############################################################################
   # ---  3. DOWNLOAD only when TRUE
-  out_dir <- paste0("/mnt/CEPH_PROJECTS/Environtwin/PLANET/BMS/", group_id)
+  out_dir <- paste0("/mnt/CEPH_PROJECTS/Environtwin/PLANET/Others/", group_id)
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   
   if (!identical(order_status, TRUE)) { 
@@ -269,7 +269,7 @@ process_single_aoi <- function(group_id, api_key, cloud_cover = 0.7,
 ## RUN ALL AOIs AUTOMATICALLY ##################################################
 aois <- st_read("gis/misc/test_sites_4326.shp") 
 aoi_ids <- unique(st_read("gis/misc/test_sites_4326.shp")$group_id)
-aoi_ids <- aoi_ids[26:30]
+aoi_ids <- aoi_ids[10]
 
 results <- lapply(aoi_ids, function(id) {
   process_single_aoi(id, api_key)

@@ -43,7 +43,7 @@ aois <- st_read("gis/misc/test_sites_4326.shp")
 # select id 
 #mapview(aois)    # click on polygon of interest and get group_id
 selected_aoi <- aois %>% 
-  filter(group_id == 69)
+  filter(group_id == 10)
 
 #mapview(selected_aoi)   
 
@@ -56,8 +56,8 @@ cloud_cover <- 0.7            # cloud filter equal or less than 70%
 item_name <- "PSScene"        # 8 band imagery, item to use for the request
 
 # Set date range that should be covered
-date_start <- as.Date("2017-03-01")
-date_end <- as.Date("2025-11-30") 
+date_start <- as.Date("2026-05-18")
+date_end <- as.Date("2026-11-30") 
 
 ##### 3. Create your filters #####
 geom_filter <- list(
@@ -197,7 +197,7 @@ scene_info <- data.frame(
 # Split into batches
 batch_size <- 150
 asset_batches <- split(scene_info, ceiling(seq_along(scene_info$id) / batch_size))
-asset_batches <- asset_batches[c(5, 15:16, 19:36)]
+#asset_batches <- asset_batches[c(5, 15:16, 19:36)]
 
 ##### 1. Write helper functions to request and activate data #####
 
@@ -222,7 +222,7 @@ submit_order <- function(batch, batch_num) {
     )
   })
     order_request <- list(
-    name = paste0("Site 10 - 2017:2025 ", batch_num), 
+    name = paste0("Site 10 - 2026 ", batch_num), 
     products = products,
     tools = list(clip_tool, harmonize_tool),
     delivery = list(
@@ -267,7 +267,7 @@ for (i in seq_along(asset_batches)) {
 #saveRDS(order_urls, "planet_order_urls.rds")
 
 ##### 3. Download data #####
-out_dir <- "PLANET/10/"
+out_dir <- "PLANET/10/missing"
 
 if (!dir.exists(out_dir)) {
   dir.create(out_dir)

@@ -6,9 +6,10 @@ library(dplyr)
 years <- 2017:2025
 sensor <- "PLA"   # change accordingly
 site <- "MH"
+version <- "03_v14_v4"
 
 refDOY_files <- paste0("/mnt/CEPH_PROJECTS/Environtwin/gis/reference/", site) 
-predDOY_files <- paste0("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level4_sites/mowing/03_v14_v4/", site, "/final")
+predDOY_files <- paste0("/mnt/CEPH_PROJECTS/Environtwin/FORCE/level4_sites/mowing/", version,"/" , site, "/final")
 copernicusRef_files <- "/mnt/CEPH_PROJECTS/Environtwin/gis/reference/copernicus/"
 webcam_files <- st_read("/mnt/CEPH_PROJECTS/Environtwin/gis/reference/MH/webcam/webcam_mowing.shp") 
 
@@ -174,17 +175,9 @@ for(i in years) {
     webcam_files$mowing_date <- as.Date(webcam_files$mowdate1, format="%Y%m%d")
     webcam_files$DOY <- as.integer(format(webcam_files$mowing_date, "%j"))
     
-    # Per-polygon evaluation (mode)
-    mode_fun <- function(x) {
-      x <- x[!is.na(x)]
-      if (length(x) == 0) return(NA)
-      ux <- unique(x)
-      ux[which.max(tabulate(match(x, ux)))]
-    }
-    
-    maj_poly <- terra::extract(predDOY, webcam_files, fun = mode_fun, bind = TRUE)
+    maj_poly <- terra::extract(predDOY, webcam_files, fun = median, bind = TRUE)
     webcam_files$maj_pred_DOY <- maj_poly$lyr.1
-    webcam_files$residual_poly <- webcam_files$maj_pred_DOY - webcam_files$DOY
+    #webcam_files$residual_poly <- webcam_files$maj_pred_DOY - webcam_files$DOY
     
     valid_poly <- !is.na(webcam_files$maj_pred_DOY) & !is.na(webcam_files$DOY)
     poly_metrics <- compute_metrics(webcam_files$maj_pred_DOY[valid_poly], webcam_files$DOY[valid_poly])
@@ -192,10 +185,12 @@ for(i in years) {
     poly_data <- data.frame(
       ref = webcam_files$DOY[valid_poly],
       pred = webcam_files$maj_pred_DOY[valid_poly],
-      residual = webcam_files$residual_poly[valid_poly],
+     # residual = webcam_files$residual_poly[valid_poly],
       mae = poly_metrics$mae, 
       rmse = poly_metrics$rmse, 
-      cor = poly_metrics$cor
+      cor = poly_metrics$cor,
+     geometry = st_geometry(webcam_files)[valid_poly],
+     id = webcam_files$fid[valid_poly]
     )
     
     # Create and save scatter plot
@@ -203,12 +198,12 @@ for(i in years) {
       geom_point(alpha = 0.8, size = 3) +
       geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed", size = 0.8) +
       geom_smooth(method = "lm", se = TRUE, color = "darkred", alpha = 0.2) +
-      annotate("rect", xmin = 55, xmax = 130, ymin = 285, ymax = 335, fill = "white", alpha = 0.9) +
-      annotate("text", x = 80, y = 300, label = paste("MAE:", round(poly_data$mae[1], 1)), size = 6, fontface = "bold") +
-      annotate("text", x = 80, y = 280, label = paste("RMSE:", round(poly_data$rmse[1], 1)), size = 6) +
-      annotate("text", x = 80, y = 260, label = paste("R =", round(poly_data$cor[1], 3)), size = 6) +
+      annotate("rect", xmin = 100, xmax = 150, ymin = 285, ymax = 335, fill = "white", alpha = 0.9) +
+      annotate("text", x = 110, y = 200, label = paste("MAE:", round(poly_data$mae[1], 1)), size = 6, fontface = "bold") +
+      annotate("text", x = 110, y = 190, label = paste("RMSE:", round(poly_data$rmse[1], 1)), size = 6) +
+      annotate("text", x = 110, y = 180, label = paste("R =", round(poly_data$cor[1], 3)), size = 6) +
       labs(x = "Reference DOY", y = "Predicted DOY", title = paste("DOY Accuracy Polygon (Webcam)", i)) +
-      theme_cowplot() + xlim(50, 300) + ylim(50, 300) + coord_fixed(ratio = 1) +
+      theme_cowplot() + xlim(100, 200) + ylim(100, 200) + coord_fixed(ratio = 1) +
       theme(
         panel.grid.major = element_line(color = "grey85", linewidth = 0.4),
         panel.grid.minor = element_line(color = "grey92", linewidth = 0.2),
@@ -218,7 +213,7 @@ for(i in years) {
       )
     
     ggsave(file.path(out_dir, paste0("WEBCAMPRED_scatter_2023_", site, "_", i, ".png")), 
-           plot1, width = 12, height = 8, dpi = 300)
+           plot1, width = 8, height = 8, dpi = 300)
     
   } 
   
@@ -259,7 +254,7 @@ for(i in years) {
     scatter_plots[[as.character(i)]] <- plot_scatter(
       plot_data,
       #"(Copernicus, Pixel)",
-      "copern_doy_scatter_pixel",
+      "refData_doy_scatter_pixel",
       out_dir,
       site,
       i,
@@ -268,7 +263,7 @@ for(i in years) {
     
     residual_plots[[as.character(i)]] <- plot_residuals(
       plot_data,
-      "copern_residual_pixel",
+      "refData_residual_pixel",
       out_dir,
       site,
       i,
@@ -336,7 +331,7 @@ for(i in years) {
         axis.title = element_text(size = 14, vjust = 1)
       ) 
     
-    print(plot3)
+    #print(plot3)
     
     ggsave(file.path(out_dir, paste0("RefPRED_scatter_poly", "_", site, "_", i, ".png")), 
           plot3, width = 12, height = 8, dpi = 300)

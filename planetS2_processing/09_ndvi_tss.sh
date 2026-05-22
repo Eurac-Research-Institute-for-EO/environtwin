@@ -20,8 +20,8 @@ for TILE_DIR in "$PLANET_ROOT"/*; do
     tile=$(basename "$TILE_DIR")
 
     echo "=============================================="
-    echo "📂 Processing PLANET NDVI in tile: $tile"
-    echo "📂 Folder: $INPUT_DIR"
+    echo "Processing PLANET NDVI in tile: $tile"
+    echo "Folder: $INPUT_DIR"
     echo "=============================================="
 
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
@@ -36,8 +36,8 @@ for TILE_DIR in "$PLANET_ROOT"/*; do
     )
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
-        echo "❌ No PLANET NDVI files found"
-        echo "➡️ Skipping this tile"
+        echo "No PLANET NDVI files found"
+        echo "Skipping this tile"
         continue
     fi
 
@@ -50,7 +50,7 @@ for TILE_DIR in "$PLANET_ROOT"/*; do
         | sort -u)
 
     if [ -z "$YEARS" ]; then
-        echo "❌ No valid years found in filenames"
+        echo "No valid years found in filenames"
         continue
     fi
 
@@ -164,12 +164,12 @@ for TILE_DIR in "$PLANET_ROOT"/*; do
             } >> "${HDR_FILE}.tmp"
 
             mv "${HDR_FILE}.tmp" "$HDR_FILE"
-            echo "✅ Header updated: $HDR_FILE"
+            echo "Header updated: $HDR_FILE"
         else
-            echo "⚠️ No header found for $OUTPUT_BSQ — skipping header update."
+            echo "No header found for $OUTPUT_BSQ — skipping header update."
         fi
 
-        echo "✅ Completed year $year"
+        echo "Completed year $year"
         echo "   → Output: $OUTPUT_BSQ"
 
         rm -f "$TEMP_VRT"
