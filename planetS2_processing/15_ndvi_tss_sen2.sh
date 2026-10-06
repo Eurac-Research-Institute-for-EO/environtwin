@@ -10,18 +10,25 @@ BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/SEN2"
 # ================================
 # LOOP THROUGH ALL data FOLDERS
 # ================================
-for SEN2_DIR in "$INPUT_ROOT"/*/data; do
+#for SEN2_DIR in "$INPUT_ROOT"/*/data; do
 
     # skip if not existing
-    [ -d "$SEN2_DIR" ] || continue
+ #   [ -d "$SEN2_DIR" ] || continue
 
-    echo "=============================================="
-    echo "📂 Processing folder: $SEN2_DIR"
-    echo "=============================================="
+ #   echo "=============================================="
+ #   echo "📂 Processing folder: $SEN2_DIR"
+ #   echo "=============================================="
 
-       # extract tile name (parent of "data")
-    tile=$(basename "$(dirname "$SEN2_DIR")")
-    echo "Processing tile: $tile"
+ #      # extract tile name (parent of "data")
+ #   tile=$(basename "$(dirname "$SEN2_DIR")")
+ #   echo "Processing tile: $tile"
+ 
+sites=("AW")
+
+for site in "${sites[@]}"; do
+    SEN2_DIR="${INPUT_ROOT}/${site}/data"
+
+    tile=$(basename "$SEN2_TILE_DIR")
 
     OUTPUT_DIR="${BASE_OUTPUT}/${tile}"
     mkdir -p "$OUTPUT_DIR"
@@ -29,7 +36,7 @@ for SEN2_DIR in "$INPUT_ROOT"/*/data; do
     # Collect all NDVI files
     mapfile -t FILES_ALL < <(
         find "$SEN2_DIR" -maxdepth 1 -type f \
-        -name "*_SEN2*_site.tif"
+        -name "*_SEN2*.tif"
     )
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
@@ -51,7 +58,7 @@ for SEN2_DIR in "$INPUT_ROOT"/*/data; do
 
         mapfile -t FILES < <(
             find "$SEN2_DIR" -maxdepth 1 -type f \
-            -name "${year}*_SEN2*_site.tif" \
+            -name "${year}*_SEN2*.tif" \
             | awk -F'/' '{
                 fname=$NF;
                 if (match(fname,/^[0-9]{8}/)) {

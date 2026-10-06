@@ -7,9 +7,9 @@ library(tools)
 library(future.apply)
 
 # === Setup ===
-in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered/"
-udm_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
-out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/MH"
+in_dir  <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard/"
+udm_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard"
+out_dir <- "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/AW"
 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -19,11 +19,12 @@ terraOptions(memfrac = 0.7)
 terraOptions(progress = 1)
 
 # === List input files ===
-sr_files  <- list.files(in_dir, pattern = "_BOA\\.bsq$", full.names = TRUE)
+sr_files  <- list.files(in_dir, pattern = "_BOA\\.tif$", full.names = TRUE)
 udm_files <- list.files(udm_dir, pattern = "_PLANET_udm2_mask\\.tif$", full.names = TRUE)
 
 # === Filter files by year ===
-years <- c("2017","2018","2019","2020", "2021" ,"2022","2023","2024","2025")
+years <- c("2024","2025")
+#"2017","2018","2019","2020", "2021" ,"2022","2023",
 pattern <- paste(years, collapse = "|")
 
 sr_files  <- grep(pattern, sr_files, value = TRUE)

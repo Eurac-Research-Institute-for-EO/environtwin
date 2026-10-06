@@ -70,7 +70,7 @@ process_udm_mask_fast <- function(sr_file, udm_file, out_dir, min_patch_size = 1
 }
 
 # -----------------------------
-# 2️⃣ Parallel folder-level driver
+# 2️⃣ Parallel folder computation
 # -----------------------------
 process_folder_parallel_fast <- function(in_dir, out_dir,
                                          year = 2024,

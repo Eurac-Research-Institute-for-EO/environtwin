@@ -13,7 +13,7 @@ library(ggplot2)
 
 ## -------------- 1. SET OPTIONS AND LOAD DATA ------------ #
 # Define years you want to process
-years <- 2020:2025
+years <- 2020:2026
 
 # Function to load shapefiles by year for WSB and LAFIS
 load_shapefiles <- function(year) {
@@ -44,7 +44,7 @@ for (yr in names(all_data)) {
       area_ha = as.numeric(st_area(.)) / 10000,
     )
   
-  if (yr == "2020") {
+  if (yr == "2020" | yr == "2026") {
     df <- df %>% 
       dplyr::rename(unique_id = uniqu_d)
   }
@@ -227,7 +227,7 @@ ggplot() +
     "Unentschlossen"              = "#7F22FE",  
     "Nicht teilgenommen"          = "#ECF0F1"   
   ))+
-  labs(fill = "Farmer groups") +
+  labs(fill = "Gruppen") +
   theme_minimal() +
   theme(
     legend.title = element_text(size = 14, face = "bold"),
@@ -371,8 +371,8 @@ plot1 <- ggplot(fields_summary, aes(x = year, y = n_fields, fill = appl)) +
     legend.title = element_text(face = "bold"),
     
     # spacing
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.title.y = element_text(margin = margin(r = 10))
+    axis.title.x = element_text(margin = ggplot2::margin(t = 10)),
+    axis.title.y = element_text(margin = ggplot2::margin(r = 10))
   )
 
 plot1
@@ -406,8 +406,8 @@ plot2 <- ggplot(farmers_summary, aes(x = year, y = n_farmers, fill = appl)) +
     # legend
     legend.position = "none",
     
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.title.y = element_text(margin = margin(r = 10))
+    axis.title.x = element_text(margin = ggplot2::margin(t = 10)),
+    axis.title.y = element_text(margin = ggplot2::margin(r = 10))
   )
 
 plot2
@@ -436,8 +436,8 @@ plot3 <- ggplot(fields_long, aes(x = year, y = area_ha, fill = appl)) +
     axis.title = element_text(face = "bold", size = 14),
     strip.text = element_text(size = 14, face = "bold"),
     legend.position = "none",
-    axis.title.x = element_text(margin = margin(t = 10)),  # space above x-axis title
-    axis.title.y = element_text(margin = margin(r = 10))
+    #axis.title.x = element_text(margin = margin(t = 10)),  
+    #axis.title.y = element_text(margin = margin(r = 10))
   ) +
   facet_grid(rows=vars(Zone)) 
 

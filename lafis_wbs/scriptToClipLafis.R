@@ -204,7 +204,6 @@ message("All years and versions processed successfully!")
 ###############################################################################
 ## clip lafis grassland with application info
 # Function to load shapefiles 
-# Function to load shapefiles 
 load_shapefiles <- function(year) {
   list(
     wsb = st_read(glue("gis/wbs/CUAA_corrected/{year}/lafis_grassland_{year}_application_ST.shp"))

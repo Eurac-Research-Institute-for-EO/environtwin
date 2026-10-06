@@ -5,7 +5,7 @@
 # ===============================
 
 INPUT_DIRS=(
-    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/MH"
+    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/AW"
 )
 
 BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"

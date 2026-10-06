@@ -11,12 +11,19 @@ BASE_OUTPUT="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/indices/03"
 # ================================
 # LOOP THROUGH ALL PLANET TILES
 # ================================
-for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
+#for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
 
-    [ -d "$PLANET_TILE_DIR" ] || continue
+#    [ -d "$PLANET_TILE_DIR" ] || continue
+
+#    tile=$(basename "$PLANET_TILE_DIR")
+
+sites=("MH")
+
+for site in "${sites[@]}"; do
+    PLANET_TILE_DIR="${PLANET_ROOT}/${site}"
 
     tile=$(basename "$PLANET_TILE_DIR")
-
+	
     INPUT_DIR="${PLANET_TILE_DIR}/data"
     SEN2_DIR="${SEN2_ROOT}/${tile}/data"
 
@@ -41,7 +48,7 @@ for PLANET_TILE_DIR in "$PLANET_ROOT"/*; do
     )
 
     if [ ${#FILES_ALL[@]} -eq 0 ]; then
-        echo "❌ No NDVI files found"
+        echo "No NDVI files found"
         continue
     fi
 

@@ -2,7 +2,7 @@
 set -o errexit
 set -o pipefail
 
-BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_daily/03/MH"
+BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard"
 OUTPUT_FILE="$BASE_DIR/wrong_files_PLANET.txt"
 PARALLEL_JOBS=6   
 

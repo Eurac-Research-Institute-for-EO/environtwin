@@ -108,8 +108,9 @@ def process_date_subfolder(args):
     if n == 0:
         append_log(log_invalid_mosaics, f"No images for {date}/{subfolder}")
         return
-
-    out_dir = os.path.join(output_root, "SA")
+    
+    ## CHANGE OUTPUT DIRECTORY ACCORDINGLY!!!
+    out_dir = os.path.join(output_root, "AW")
     os.makedirs(out_dir, exist_ok=True)
 
     out_boa = os.path.join(out_dir, f"{date}_PLANET_BOA.tif")

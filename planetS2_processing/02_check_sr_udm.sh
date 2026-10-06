@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Parent folder containing all subfolders to check
-BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH"
+BASE_DIR="/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW"
 
 # Output file for missing files
 OUTPUT_FILE="$BASE_DIR/missing_files.txt"
@@ -32,7 +32,7 @@ for DIR in "$BASE_DIR"/*; do
 
     # Extract prefixes
     prefixes_sr=$(ls *_PLANET_*_BOA.tif 2>/dev/null | sed 's/_PLANET_.*_BOA\.tif$//')
-    prefixes_udm2=$(ls *_PLANET_udm2_buffer.tif 2>/dev/null | sed 's/_PLANET_udm2_buffer.tif//')
+    prefixes_udm2=$(ls *_PLANET_udm2_mask.tif 2>/dev/null | sed 's/_PLANET_udm2_mask.tif//')
 
     missing_udm2=0
     missing_sr=0

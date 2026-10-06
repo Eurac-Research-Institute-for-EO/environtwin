@@ -36,7 +36,7 @@ from multiprocessing import Pool
 
 # Base directory containing Level-2 Planet scenes
 #BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/coregistered"
-BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/coregistered"
+BASE_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard"
 #UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard"
 UDM_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard"
 
@@ -56,11 +56,23 @@ WHITENESS_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/sites_whiteness/AW"
 #    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/MH/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20250716_20250722_DATA.tif"
 #]
 
+mosaic_refs = [
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20170701_20170707_DATA.tif",
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20180708_20180717_DATA.tif",
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20190625_20190630_DATA.tif",
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20200708_20200717_DATA.tif",
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET_MOSAIC_20210708_20210717_DATA.tif", 
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20220708_20220717_DATA.tif",
+    #"/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20230708_20230717_DATA.tif",
+    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET_MOSAIC_4BANDS_PERIOD/final/PLANET_MOSAIC_20240716_20240731_DATA.tif",
+    "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level3_sites/mosaic/AW/PLANET-SENTINEL_MOSAIC_4BANDS_PERIOD_AW/final/PLANET-SENTINEL_MOSAIC_20250715_20250724_DATA.tif"
+]
+
 # Target mask grid (defines CRS, resolution, and extent)
-MASK_PATH = "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/MH_mask.tif"
+MASK_PATH = "/mnt/CEPH_PROJECTS/Environtwin/gis/masks/AW_mask.tif"
 
 # Output directory
-OUT_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/MH/standard/"
+OUT_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/level2_sites_raw/AW/standard/"
 #OUT_DIR = "/mnt/CEPH_PROJECTS/Environtwin/FORCE/test/buffer"
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -138,7 +150,7 @@ def extract_scene_key(path):
 nir_index = {}
 white_index = {}
 
-for f in glob.glob(os.path.join(BASE_DIR, "*PLANET_BOA.bsq")):
+for f in glob.glob(os.path.join(BASE_DIR, "*PLANET_*BOA.tif")):
     key = extract_scene_key(f)
     nir_index[key] = f
 
